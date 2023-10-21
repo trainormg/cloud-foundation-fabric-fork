@@ -28,6 +28,7 @@ variable "attached_disk_defaults" {
     replica_zone = null
     type         = "pd-balanced"
   }
+  nullable = false
   validation {
     condition     = var.attached_disk_defaults.mode == "READ_WRITE" || !var.attached_disk_defaults.auto_delete
     error_message = "auto_delete can only be specified on READ_WRITE disks."
@@ -59,7 +60,8 @@ variable "attached_disks" {
       }
     )
   }))
-  default = []
+  default  = []
+  nullable = false
   validation {
     condition = length([
       for d in var.attached_disks : d if(
@@ -118,19 +120,23 @@ variable "can_ip_forward" {
   description = "Enable IP forwarding."
   type        = bool
   default     = false
+  nullable    = false
 }
 
 variable "confidential_compute" {
   description = "Enable Confidential Compute for these instances."
   type        = bool
   default     = false
+  nullable    = false
 }
 
 variable "create_template" {
   description = "Create instance template instead of instances."
   type        = bool
   default     = false
+  nullable    = false
 }
+
 variable "description" {
   description = "Description of a Compute Instance."
   type        = string
@@ -141,6 +147,7 @@ variable "enable_display" {
   description = "Enable virtual display on the instances."
   type        = bool
   default     = false
+  nullable    = false
 }
 
 variable "encryption" {
@@ -171,6 +178,7 @@ variable "iam" {
   description = "IAM bindings in {ROLE => [MEMBERS]} format."
   type        = map(list(string))
   default     = {}
+  nullable    = false
 }
 
 variable "instance_schedule" {
@@ -212,18 +220,21 @@ variable "instance_type" {
   description = "Instance type."
   type        = string
   default     = "f1-micro"
+  nullable    = false
 }
 
 variable "labels" {
   description = "Instance labels."
   type        = map(string)
   default     = {}
+  nullable    = false
 }
 
 variable "metadata" {
   description = "Instance metadata."
   type        = map(string)
   default     = {}
+  nullable    = false
 }
 
 variable "min_cpu_platform" {
@@ -267,6 +278,7 @@ variable "options" {
     spot                      = false
     termination_action        = null
   }
+  nullable = false
   validation {
     condition = (var.options.termination_action == null
       ||
@@ -290,6 +302,7 @@ variable "scratch_disks" {
     count     = 0
     interface = "NVME"
   }
+  nullable = false
 }
 
 variable "service_account" {
@@ -299,7 +312,8 @@ variable "service_account" {
     email       = optional(string)
     scopes      = optional(list(string))
   })
-  default = {}
+  default  = {}
+  nullable = true
 }
 
 variable "shielded_config" {
