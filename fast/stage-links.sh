@@ -53,7 +53,7 @@ case $STAGE_NAME in
   PROVIDER="providers/0-bootstrap-providers.tf"
   TFVARS=""
   ;;
-"1-resman" | "1-tenant-factory")
+"1-resman" | "1-tenant-factory" | "1-resman-b")
   PROVIDER="providers/${STAGE_NAME}-providers.tf"
   TFVARS="tfvars/0-bootstrap.auto.tfvars.json"
   ;;
