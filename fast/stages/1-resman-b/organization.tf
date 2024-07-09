@@ -39,13 +39,21 @@ module "organization" {
   source          = "../../../modules/organization"
   count           = var.root_node == null ? 1 : 0
   organization_id = "organizations/${var.organization.id}"
-  iam_bindings_additive = {
-    for k, v in local.branch_iam_org : k => merge(v, {
-      member = try(module.branch-sa[v.member].iam_email, v.member)
-    })
-  }
-  # do not assign tagViewer or tagUser roles here on tag keys and values as
-  # they are managed authoritatively and will break multitenant stages
+  iam_bindings_additive = merge(
+    # branch roles from each branch fast_config.iam_organization
+    {
+      for k, v in local.branch_iam_org : k => merge(v, {
+        member = try(module.branch-sa[v.member].iam_email, v.member)
+      })
+      # branch billing roles from each branch fat_config.iam_billing
+    },
+    local.billing_mode != "org" ? {} : {
+      for k, v in local.branch_iam_billing : k => merge(v, {
+        member = try(module.branch-sa[v.member].iam_email, v.member)
+      })
+    }
+  )
+  # be careful assigning tag viewer or user roles here as this is authoritative
   tags = merge(local.tags, {
     (var.tag_names.context) = {
       description = "Resource management context."

@@ -30,6 +30,23 @@ locals {
       }
     ])
   ])
+  _branch_iam_billing = flatten([
+    for k, v in var.branches : concat([
+      for member in v.fast_config.billing_iam.cost_manager_principals : {
+        branch = k
+        key    = "${k}/cost_manager/${member}"
+        role   = "roles/billing.costsManager"
+        member = member
+      }
+      ], [
+      for member in v.fast_config.billing_iam.user_principals : {
+        branch = k
+        key    = "${k}/user/${member}"
+        role   = "roles/billing.user"
+        member = member
+      }
+    ])
+  ])
   _branch_iam_org = flatten([
     for k, v in var.branches : concat([
       for name, attrs in v.fast_config.organization_iam : {
@@ -57,6 +74,10 @@ locals {
       }
     ] if v.fast_config.automation_enabled == true
   ])
+  branch_buckets = {
+    for k, v in var.branches :
+    k => v.fast_config if v.fast_config.automation_enabled == true
+  }
   branch_cicd_configs = {
     for k, v in var.branches : k => v.fast_config.cicd_config
   }
@@ -67,23 +88,12 @@ locals {
       name   = v.name
     }
   }
-  branch_iam_billing = flatten([
-    for k, v in var.branches : concat([
-      for member in v.fast_config.billing_iam.cost_manager_principals : {
-        branch = k
-        key    = "${k}/cost_manager/${member}"
-        role   = "roles/billing.costsManager"
-        member = member
-      }
-      ], [
-      for member in v.fast_config.billing_iam.user_principals : {
-        branch = k
-        key    = "${k}/user/${member}"
-        role   = "roles/billing.user"
-        member = member
-      }
-    ])
-  ])
+  branch_iam_billing = {
+    for v in local._branch_iam_billing : v.key => {
+      member = "${v.branch}/${v.member}"
+      role   = v.role
+    }
+  }
   branch_iam_org = {
     for v in local._branch_iam_org : v.key => {
       member    = "${v.branch}/${v.member}"

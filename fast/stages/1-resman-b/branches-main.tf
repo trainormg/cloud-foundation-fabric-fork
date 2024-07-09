@@ -72,8 +72,26 @@ module "branch-sa" {
   iam_project_roles = {
     (var.automation.project_id) = ["roles/serviceusage.serviceUsageConsumer"]
   }
-  # TODO(ludo): GCS permissions
-  # iam_storage_roles = {
-  #   (var.automation.outputs_bucket) = ["roles/storage.objectAdmin"]
-  # }
+  iam_storage_roles = !endswith(each.key, "sa-rw") ? {} : {
+    (var.automation.outputs_bucket) = ["roles/storage.objectAdmin"]
+  }
+}
+
+module "branch-gcs" {
+  source        = "../../../modules/gcs"
+  for_each      = local.branch_buckets
+  project_id    = var.automation.project_id
+  name          = "prod-resman-${each.key}-0"
+  prefix        = var.prefix
+  location      = var.locations.gcs
+  storage_class = local.gcs_storage_class
+  versioning    = true
+  iam = {
+    "roles/storage.objectAdmin" = [
+      module.branch-sa["${each.key}/sa-rw"].iam_email
+    ]
+    "roles/storage.objectViewer" = [
+      module.branch-sa["${each.key}/sa-ro"].iam_email
+    ]
+  }
 }
