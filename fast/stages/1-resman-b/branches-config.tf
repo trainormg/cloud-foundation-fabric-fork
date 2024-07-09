@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+# tfdoc:file:description Branch-related locals to process the branches variable.
+
 locals {
   _branch_folders = flatten([
     for k, v in var.branches : concat([
@@ -103,14 +105,5 @@ locals {
   }
   branch_service_accounts = {
     for v in local._branch_service_accounts : v.key => v
-  }
-}
-
-output "tmp" {
-  value = {
-    folders     = local.branch_folders
-    iam_billing = local.branch_iam_billing
-    iam_org     = local.branch_iam_org
-    sas         = local.branch_service_accounts
   }
 }

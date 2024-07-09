@@ -20,6 +20,10 @@ locals {
     ? "MULTI_REGIONAL"
     : "REGIONAL"
   )
+  # guard against this attribute being null
+  identity_providers = coalesce(
+    try(var.automation.federated_identity_providers, null), {}
+  )
   root_node = (
     var.root_node == null
     ? "organizations/${var.organization.id}"

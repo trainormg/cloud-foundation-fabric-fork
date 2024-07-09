@@ -17,8 +17,6 @@
 # tfdoc:file:description Billing resources for external billing use cases.
 
 locals {
-  # used here for convenience, in organization.tf members are explicit
-  billing_ext_users = []
   billing_mode = (
     var.billing_account.no_iam
     ? null
@@ -26,24 +24,15 @@ locals {
   )
 }
 
-# billing account in same org (resources is in the organization.tf file)
+# standalone billing account (org-level roles are in organization.tf)
 
-# standalone billing account
-
-resource "google_billing_account_iam_member" "billing_ext_admin" {
-  for_each = toset(
-    local.billing_mode == "resource" ? local.billing_ext_users : []
-  )
+resource "google_billing_account_iam_member" "default" {
+  for_each = local.billing_mode != "resource" ? {} : {
+    for k, v in local.branch_iam_billing : k => merge(v, {
+      member = try(module.branch-sa[v.member].iam_email, v.member)
+    })
+  }
   billing_account_id = var.billing_account.id
-  role               = "roles/billing.user"
-  member             = each.key
-}
-
-resource "google_billing_account_iam_member" "billing_ext_costsmanager" {
-  for_each = toset(
-    local.billing_mode == "resource" ? local.billing_ext_users : []
-  )
-  billing_account_id = var.billing_account.id
-  role               = "roles/billing.costsManager"
-  member             = each.key
+  role               = each.value.role
+  member             = each.value.member
 }

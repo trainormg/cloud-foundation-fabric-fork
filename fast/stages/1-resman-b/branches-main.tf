@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+# tfdoc:file:description Main branch resources.
+
 module "branch-folders" {
   source              = "../../../modules/folder"
   for_each            = local.branch_folders
@@ -63,12 +65,11 @@ module "branch-sa" {
   display_name           = "Terraform resman service account for ${each.value.branch}."
   prefix                 = var.prefix
   service_account_create = var.root_node == null
-  # TODO(ludo): CI/CD permissions
-  # iam = {
-  #   "roles/iam.serviceAccountTokenCreator" = compact([
-  #     try(module.branch-network-sa-cicd[0].iam_email, null)
-  #   ])
-  # }
+  iam = !each.value.cicd_enabled ? {} : {
+    "roles/iam.serviceAccountTokenCreator" = [
+      module.branch-cicd-sa["${each.key}-cicd"].iam_email
+    ]
+  }
   iam_project_roles = {
     (var.automation.project_id) = ["roles/serviceusage.serviceUsageConsumer"]
   }

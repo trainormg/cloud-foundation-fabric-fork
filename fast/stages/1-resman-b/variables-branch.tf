@@ -28,9 +28,9 @@ variable "branches" {
         user_principals         = optional(list(string), [])
       }), {})
       cicd_config = optional(object({
-        name              = string
-        type              = string
-        branch            = optional(string)
+        repository_name   = string
+        repository_type   = string
+        repository_branch = optional(string)
         identity_provider = optional(string)
       }))
       organization_iam = optional(map(object({

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+# tfdoc:file:description Tenant root node resources.
+
 module "root-folder" {
   source        = "../../../modules/folder"
   count         = var.root_node != null ? 1 : 0

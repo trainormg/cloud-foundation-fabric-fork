@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-# tfdoc:file:description Organization policies.
+# tfdoc:file:description Organization-level IAM and tags.
 
 locals {
   tags = {
