@@ -77,11 +77,12 @@ locals {
     ] if v.fast_config.automation_enabled == true
   ])
   branch_buckets = {
-    for k, v in var.branches :
-    k => v.fast_config if v.fast_config.automation_enabled == true
+    for k, v in var.branches : k => v.fast_config
+    if v.fast_config.automation_enabled == true
   }
   branch_cicd_configs = {
     for k, v in var.branches : k => v.fast_config.cicd_config
+    if v.fast_config.cicd_config != null
   }
   branch_folders = {
     for v in local._branch_folders : v.key => {
