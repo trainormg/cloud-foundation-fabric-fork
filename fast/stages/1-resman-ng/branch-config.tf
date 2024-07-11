@@ -16,7 +16,16 @@
 
 # tfdoc:file:description Branch-related locals to process the branches variable.
 
+# This file only contains locals that process the branches variables, split
+# in two broad sections:
+#
+# - "local" locals (_ prefix) are only used here and compute aggregated lists
+#   of resources across all branches
+# - "public" locals recompose the lists into maps that are then consumed
+#   directly with for_each in resource blocks
+
 locals {
+  # recompose list of main and extra folders for all branches
   _branch_folders = flatten([
     for k, v in var.branches : concat([
       {
@@ -32,6 +41,7 @@ locals {
       }
     ])
   ])
+  # recompose list of billing IAM for all branches
   _branch_iam_billing = flatten([
     for k, v in var.branches : concat([
       for member in v.fast_config.billing_iam.cost_manager_principals : {
@@ -49,6 +59,7 @@ locals {
       }
     ])
   ])
+  # recompose list of org-level IAM for all branches
   _branch_iam_org = flatten([
     for k, v in var.branches : concat([
       for name, attrs in v.fast_config.organization_iam : {
@@ -60,6 +71,7 @@ locals {
       }
     ])
   ])
+  # recompose list of branch service accounts as product of branch and ro/rw
   _branch_service_accounts = flatten([
     for k, v in var.branches : [
       {
@@ -76,14 +88,17 @@ locals {
       }
     ] if v.fast_config.automation_enabled == true
   ])
+  # map of branch buckets for branches with automation enabled
   branch_buckets = {
     for k, v in var.branches : k => v.fast_config
     if v.fast_config.automation_enabled == true
   }
+  # map of CI/CD configs for branches with CI/CD enabled
   branch_cicd_configs = {
     for k, v in var.branches : k => v.fast_config.cicd_config
     if v.fast_config.cicd_config != null
   }
+  # transform folder list into a map
   branch_folders = {
     for v in local._branch_folders : v.key => {
       config = var.branches[v.branch].folders_config
@@ -91,12 +106,14 @@ locals {
       name   = v.name
     }
   }
+  # transform billing IAM list into a map
   branch_iam_billing = {
     for v in local._branch_iam_billing : v.key => {
       member = "${v.branch}/${v.member}"
       role   = v.role
     }
   }
+  # transform org-level IAM list into a map
   branch_iam_org = {
     for v in local._branch_iam_org : v.key => {
       member    = "${v.branch}/${v.member}"
@@ -104,6 +121,7 @@ locals {
       condition = v.condition
     }
   }
+  # transform service account list into a map
   branch_service_accounts = {
     for v in local._branch_service_accounts : v.key => v
   }
