@@ -18,46 +18,79 @@ locals {
   # compute providers and tfvars file prefixes for each branch
   _branch_file_prefixes = {
     for k, v in var.branches :
+    # name is [stage level]-[stage name]
     k => join("-", compact([v.fast_config.stage_level, k]))
-    if v.fast_config.automation == true
+    if v.fast_config.automation_enabled == true
   }
   # compute stage 3 CI/CD dependencies on stage 2 branches
   _cicd_stage2 = [
     for k, v in local._branch_file_prefixes : v if(
-      var.branches[k].fast_config.automation == true &&
+      var.branches[k].fast_config.automation_enabled == true &&
       var.branches[k].fast_config.stage_level == 2
     )
   ]
   # prepare CI/CD workflow attributes
   cicd_workflows = {
-    for k, v in local.branch_cicd_configs : k => {
-      service_accounts = {
-        apply = module.branch-sa["${k}/sa-rw"].email
-        plan  = module.branch-sa["${k}/sa-ro"].email
-      }
-      tf_providers_files = {
-        apply = "${local._branch_file_prefixes[k]}-providers.tf"
-        apply = "${local._branch_file_prefixes[k]}-r-providers.tf"
-      }
-      tf_var_files = v.fast_config.stage_level == null ? [] : concat(
-        [
-          "0-globals.auto.tfvars.json",
-          "0-bootstrap.auto.tfvars.json",
-          "1-resman.auto.tfvars.json"
-        ],
-        v.fast_config.stage_level == 2 ? [] : local._cicd_stage2
-      )
-    }
+    for k, v in local.branch_cicd_configs : k => templatefile(
+      "${path.module}/templates/workflow-${v.repository_type}.yaml", {
+        audiences = try(
+          local.identity_providers[v.identity_provider].audiences, null
+        )
+        identity_provider = try(
+          local.identity_providers[v.identity_provider].name, null
+        )
+        outputs_bucket = var.automation.outputs_bucket
+        service_accounts = {
+          apply = module.branch-sa["${k}/sa-rw"].email
+          plan  = module.branch-sa["${k}/sa-ro"].email
+        }
+        stage_name = k
+        tf_providers_files = {
+          apply = "${local._branch_file_prefixes[k]}-providers.tf"
+          apply = "${local._branch_file_prefixes[k]}-r-providers.tf"
+        }
+        tf_var_files = (
+          v.fast_config.stage_level == null
+          # if the branch has no stage level it does not have dependencies
+          ? []
+          : concat(
+            # stage 2s and 3s all depend on tfvars from 0 and 1
+            [
+              "0-globals.auto.tfvars.json",
+              "0-bootstrap.auto.tfvars.json",
+              "1-resman.auto.tfvars.json"
+            ],
+            # stage 3s also depend on stage 2s
+            v.fast_config.stage_level == 2 ? [] : local._cicd_stage2
+          )
+        )
+    })
   }
   # prepare branch provider attributes
-  providers = {
-    for k, v in local._branch_file_prefixes : v => {
-      backend_extra = null
-      bucket        = module.branch-gcs[k].name
-      name          = k
-      sa            = module.branch-sa[k].email
+  providers = merge(
+    # read-write providers
+    {
+      for k, v in local._branch_file_prefixes : v => templatefile(
+        "${path.module}/templates/providers.tf.tpl", {
+          backend_extra = null
+          bucket        = module.branch-gcs[k].name
+          name          = k
+          sa            = module.branch-sa["${k}/sa-rw"].email
+        }
+      )
+    },
+    # read-only providers
+    {
+      for k, v in local._branch_file_prefixes : "${v}-r" => templatefile(
+        "${path.module}/templates/providers.tf.tpl", {
+          backend_extra = null
+          bucket        = module.branch-gcs[k].name
+          name          = k
+          sa            = module.branch-sa["${k}/sa-ro"].email
+        }
+      )
     }
-  }
+  )
   # stage output vars
   tfvars = {
     folder_ids = {
