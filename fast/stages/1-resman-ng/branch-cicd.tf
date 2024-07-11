@@ -18,7 +18,7 @@
 
 locals {
   _branch_cicd_sa = flatten([
-    for k, v in var.branches : [
+    for k, v in local.branches : [
       {
         branch = k
         cicd   = v.fast_config.cicd_config
@@ -34,7 +34,7 @@ locals {
     ] if v.fast_config.cicd_config != null
   ])
   branch_cicd = {
-    for k, v in var.branches :
+    for k, v in local.branches :
     k => v.fast_config.cicd_config if v.fast_config.cicd_config != null
   }
   branch_cicd_sa = {

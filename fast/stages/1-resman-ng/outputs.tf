@@ -17,7 +17,7 @@
 locals {
   # compute providers and tfvars file prefixes for each branch
   _branch_file_prefixes = {
-    for k, v in var.branches :
+    for k, v in local.branches :
     # name is [stage level]-[stage name]
     k => join("-", compact([v.fast_config.stage_level, k]))
     if v.fast_config.automation_enabled == true
@@ -25,8 +25,8 @@ locals {
   # compute stage 3 CI/CD dependencies on stage 2 branches
   _cicd_stage2 = [
     for k, v in local._branch_file_prefixes : v if(
-      var.branches[k].fast_config.automation_enabled == true &&
-      var.branches[k].fast_config.stage_level == 2
+      local.branches[k].fast_config.automation_enabled == true &&
+      local.branches[k].fast_config.stage_level == 2
     )
   ]
   # prepare CI/CD workflow attributes

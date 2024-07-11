@@ -27,7 +27,7 @@
 locals {
   # recompose list of main and extra folders for all branches
   _branch_folders = flatten([
-    for k, v in var.branches : concat([
+    for k, v in local.branches : concat([
       {
         branch = k
         key    = "${k}/main"
@@ -43,7 +43,7 @@ locals {
   ])
   # recompose list of billing IAM for all branches
   _branch_iam_billing = flatten([
-    for k, v in var.branches : concat([
+    for k, v in local.branches : concat([
       for member in v.fast_config.billing_iam.cost_manager_principals : {
         branch = k
         key    = "${k}/cost_manager/${member}"
@@ -61,7 +61,7 @@ locals {
   ])
   # recompose list of org-level IAM for all branches
   _branch_iam_org = flatten([
-    for k, v in var.branches : concat([
+    for k, v in local.branches : concat([
       for name, attrs in v.fast_config.organization_iam : {
         branch    = k
         key       = "${k}/${attrs.role}/${attrs.member}"
@@ -73,7 +73,7 @@ locals {
   ])
   # recompose list of branch service accounts as product of branch and ro/rw
   _branch_service_accounts = flatten([
-    for k, v in var.branches : [
+    for k, v in local.branches : [
       {
         branch       = k
         key          = "${k}/sa-ro"
@@ -90,18 +90,18 @@ locals {
   ])
   # map of branch buckets for branches with automation enabled
   branch_buckets = {
-    for k, v in var.branches : k => v.fast_config
+    for k, v in local.branches : k => v.fast_config
     if v.fast_config.automation_enabled == true
   }
   # map of CI/CD configs for branches with CI/CD enabled
   branch_cicd_configs = {
-    for k, v in var.branches : k => v.fast_config.cicd_config
+    for k, v in local.branches : k => v.fast_config.cicd_config
     if v.fast_config.cicd_config != null
   }
   # transform folder list into a map
   branch_folders = {
     for v in local._branch_folders : v.key => {
-      config = var.branches[v.branch].folders_config
+      config = local.branches[v.branch].folders_config
       branch = v.branch
       name   = v.name
     }
@@ -125,4 +125,9 @@ locals {
   branch_service_accounts = {
     for v in local._branch_service_accounts : v.key => v
   }
+  # merge branches from the variable and factory files
+  branches = merge(
+    local._branches_f,
+    var.branches
+  )
 }
