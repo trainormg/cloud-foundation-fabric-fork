@@ -48,8 +48,12 @@ locals {
             v.fast_config.billing_iam.user_principals, []
           )
         }
-        cicd_config      = try(v.cicd_config, null)
-        organization_iam = try(v.organization_iam, {})
+        cicd_config = try(v.fast_config.cicd_config, null)
+        organization_iam = {
+          for k, v in try(v.fast_config.organization_iam, {}) : k => merge({
+            condition = null
+          }, v)
+        }
       }
       folders_config = {
         contacts              = try(v.folders_config.contacts, {})

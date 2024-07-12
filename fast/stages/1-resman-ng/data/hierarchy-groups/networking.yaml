@@ -10,13 +10,13 @@ fast_config:
       member: sa-rw
       role: roles/compute.orgFirewallPolicyAdmin
     sa_net_xpn_admin:
-      member: module.branch-network-sa.iam_email
+      member: sa-rw
       role: roles/compute.xpnAdmin
     sa_sec_asset_viewer:
-      member: module.branch-security-sa.iam_email
+      member: sa-rw
       role: roles/cloudasset.viewer
     sa_sec_vpcsc_admin:
-      member: module.branch-security-sa.iam_email
+      member: sa-rw
       role: roles/accesscontextmanager.policyAdmin
 folders_config:
   iam:
