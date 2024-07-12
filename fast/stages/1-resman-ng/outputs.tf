@@ -104,12 +104,8 @@ locals {
       ? module.organization[0].tag_keys
       : module.automation-project[0].tag_keys
     )
-    tag_names = var.tag_names
-    tag_values = (
-      var.root_node == null
-      ? module.organization[0].tag_values
-      : module.automation-project[0].tag_values
-    )
+    tag_names  = var.tag_names
+    tag_values = local.tag_values
   }
 }
 

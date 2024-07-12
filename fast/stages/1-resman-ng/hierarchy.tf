@@ -31,7 +31,7 @@ module "hg-folders" {
     for k, v in each.value.config.iam : k => [
       for vv in v : try(
         module.hg-sa["${each.value.hg}/${vv}"].iam_email,
-        vv
+        lookup(var.groups, vv, vv)
       )
     ]
   }
@@ -39,7 +39,7 @@ module "hg-folders" {
     for k, v in each.value.config.iam_bindings : k => merge(v, {
       member = try(
         module.hg-sa["${each.value.hg}/${v.member}"].iam_email,
-        v.member
+        lookup(var.groups, v.member, v.member)
       )
     })
   }
@@ -47,14 +47,20 @@ module "hg-folders" {
     for k, v in each.value.config.iam_bindings : k => merge(v, {
       member = try(
         module.hg-sa["${each.value.hg}/${v.member}"].iam_email,
-        v.member
+        lookup(var.groups, v.member, v.member)
       )
     })
   }
   # dynamic keys are not supported here so don't look for substitutions
-  iam_by_principals = each.value.config.iam_by_principals
-  org_policies      = each.value.config.org_policies
-  tag_bindings      = each.value.config.tag_bindings
+  iam_by_principals = {
+    for k, v in each.value.config.iam_by_principals :
+    lookup(var.groups, k, k) => v
+  }
+  org_policies = each.value.config.org_policies
+  tag_bindings = {
+    for k, v in each.value.config.tag_bindings :
+    k => lookup(local.tag_values, v, v)
+  }
 }
 
 module "hg-sa" {

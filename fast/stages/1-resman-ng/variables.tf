@@ -17,8 +17,7 @@
 variable "factories_config" {
   description = "Configuration for the resource factories or external data."
   type = object({
-    branches     = optional(string, "data/branches")
-    org_policies = optional(string, "data/org-policies")
+    hierarchy_groups = optional(string, "data/hierarchy-groups")
   })
   nullable = false
   default  = {}

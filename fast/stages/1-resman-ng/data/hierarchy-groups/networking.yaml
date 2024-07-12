@@ -1,0 +1,42 @@
+name: Networking
+fast_config:
+  billing_iam:
+    cost_manager_principals:
+      - sa-rw
+    user_principals:
+      - sa-rw
+  organization_iam:
+    sa_net_fw_policy_admin:
+      member: sa-rw
+      role: roles/compute.orgFirewallPolicyAdmin
+    sa_net_xpn_admin:
+      member: module.branch-network-sa.iam_email
+      role: roles/compute.xpnAdmin
+    sa_sec_asset_viewer:
+      member: module.branch-security-sa.iam_email
+      role: roles/cloudasset.viewer
+    sa_sec_vpcsc_admin:
+      member: module.branch-security-sa.iam_email
+      role: roles/accesscontextmanager.policyAdmin
+folders_config:
+  iam:
+    roles/logging.admin:
+      - sa-rw
+    roles/owner:
+      - sa-rw
+    roles/resourcemanager.folderAdmin:
+      - sa-rw
+    roles/resourcemanager.projectCreator:
+      - sa-rw
+    roles/compute.xpnAdmin:
+      - sa-rw
+    # read-only (plan) automation service account
+    roles/viewer:
+      - sa-ro
+    roles/resourcemanager.folderViewer:
+      - sa-ro
+  iam_by_principals:
+    gcp-network-admins:
+      - roles/editor
+  tag_bindings:
+    context: context/networking

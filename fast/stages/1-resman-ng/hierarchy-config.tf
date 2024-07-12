@@ -31,7 +31,7 @@ locals {
       {
         hg   = k
         key  = "${k}/main"
-        name = v.hg_name
+        name = v.name
       }
       ], [
       for key, name in v.extra_folders : {
@@ -48,14 +48,14 @@ locals {
         hg     = k
         key    = "${k}/cost_manager/${member}"
         role   = "roles/billing.costsManager"
-        member = member
+        member = lookup(var.groups, member, member)
       }
       ], [
       for member in v.fast_config.billing_iam.user_principals : {
         hg     = k
         key    = "${k}/user/${member}"
         role   = "roles/billing.user"
-        member = member
+        member = lookup(var.groups, member, member)
       }
     ])
   ])
@@ -66,7 +66,7 @@ locals {
         hg        = k
         key       = "${k}/${attrs.role}/${attrs.member}"
         role      = attrs.role
-        member    = attrs.member
+        member    = lookup(var.groups, attrs.member, attrs.member)
         condition = attrs.condition
       }
     ])

@@ -15,6 +15,11 @@
  */
 
 locals {
+  _tag_root = (
+    var.root_node == null
+    ? module.organization[0]
+    : module.automation-project[0]
+  )
   gcs_storage_class = (
     length(split("-", var.locations.gcs)) < 2
     ? "MULTI_REGIONAL"
@@ -29,4 +34,7 @@ locals {
     ? "organizations/${var.organization.id}"
     : var.root_node
   )
+  tag_values = {
+    for k, v in local._tag_root.tag_values : k => v.id
+  }
 }
