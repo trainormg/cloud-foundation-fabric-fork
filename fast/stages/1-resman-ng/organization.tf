@@ -25,7 +25,7 @@ locals {
             for role, principals in tag_v.iam : role => [
               for principal in principals : (
                 # try replacing branch/sa-ro branch/sa-rw format principals
-                try(module.branch-sa[principal].iam_email, principal)
+                try(module.hg-sa[principal].iam_email, principal)
               )
             ]
           }
@@ -42,14 +42,14 @@ module "organization" {
   iam_bindings_additive = merge(
     # branch roles from each branch fast_config.iam_organization
     {
-      for k, v in local.branch_iam_org : k => merge(v, {
-        member = try(module.branch-sa[v.member].iam_email, v.member)
+      for k, v in local.hg_iam_org : k => merge(v, {
+        member = try(module.hg-sa[v.member].iam_email, v.member)
       })
       # branch billing roles from each branch fat_config.iam_billing
     },
     local.billing_mode != "org" ? {} : {
-      for k, v in local.branch_iam_billing : k => merge(v, {
-        member = try(module.branch-sa[v.member].iam_email, v.member)
+      for k, v in local.hg_iam_billing : k => merge(v, {
+        member = try(module.hg-sa[v.member].iam_email, v.member)
       })
     }
   )

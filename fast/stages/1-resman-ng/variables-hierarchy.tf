@@ -16,10 +16,10 @@
 
 # tfdoc:file:description Branch definition variables.
 
-variable "branches" {
-  description = "Branch definitions (merged with those from factory)."
+variable "hierarchy_groups" {
+  description = "Hierarchy group definitions (merged with those from factory)."
   type = map(object({
-    branch_name   = string
+    name          = string
     extra_folders = optional(map(string), {})
     fast_config = optional(object({
       automation_enabled = optional(bool, true)
@@ -115,20 +115,20 @@ variable "branches" {
   default  = {}
   validation {
     condition = alltrue([
-      for k, v in var.branches : (
+      for k, v in var.hierarchy_groups : (
         v.fast_config == null ||
         contains([2, 3], coalesce(try(v.fast_config.stage_level, null), 2))
       )
     ])
-    error_message = "Incorrect stage level, FAST branches can only be a stage 2 or 3."
+    error_message = "Incorrect stage level, FAST hierarchy groups can only be a stage 2 or 3."
   }
   validation {
     condition = alltrue([
-      for k, v in var.branches : (
+      for k, v in var.hierarchy_groups : (
         v.fast_config.cicd_config == null ||
         v.fast_config.automation_enabled == true
       )
     ])
-    error_message = "Branches with CI/CD configured also need automation enabled."
+    error_message = "Hierarchy groups with CI/CD configured also need automation enabled."
   }
 }

@@ -14,55 +14,55 @@
  * limitations under the License.
  */
 
-# tfdoc:file:description Branch resources for CI/CD support.
+# tfdoc:file:description Hierarchy group resources for CI/CD support.
 
 locals {
-  _branch_cicd_sa = flatten([
-    for k, v in local.branches : [
+  _hg_cicd_sa = flatten([
+    for k, v in local.hierarchy_groups : [
       {
-        branch = k
-        cicd   = v.fast_config.cicd_config
-        key    = "${k}/sa-ro-cicd"
-        name   = "${k}-1r"
+        hg   = k
+        cicd = v.fast_config.cicd_config
+        key  = "${k}/sa-ro-cicd"
+        name = "${k}-1r"
       },
       {
-        branch = k
-        cicd   = v.fast_config.cicd_config
-        key    = "${k}/sa-rw-cicd"
-        name   = "${k}-1"
+        hg   = k
+        cicd = v.fast_config.cicd_config
+        key  = "${k}/sa-rw-cicd"
+        name = "${k}-1"
       }
     ] if v.fast_config.cicd_config != null
   ])
-  branch_cicd = {
-    for k, v in local.branches :
+  hg_cicd = {
+    for k, v in local.hierarchy_groups :
     k => v.fast_config.cicd_config if v.fast_config.cicd_config != null
   }
-  branch_cicd_sa = {
-    for v in local._branch_cicd_sa : v.key => v
+  hg_cicd_sa = {
+    for v in local._hg_cicd_sa : v.key => v
   }
 }
 
-module "branch-cicd-sa" {
+module "hg-cicd-sa" {
   source       = "../../../modules/iam-service-account"
-  for_each     = local.branch_cicd_sa
+  for_each     = local.hg_cicd_sa
   project_id   = var.automation.project_id
   name         = "resman-${each.value.name}"
-  display_name = "Terraform resman CI/CD service account for ${each.value.branch}."
+  display_name = "Terraform resman CI/CD service account for ${each.value.hg}."
   prefix       = var.prefix
   iam = {
     "roles/iam.workloadIdentityUser" = [
-      # read-only service accounts don't use branch-specific principal
-      each.value.cicd.repository_branch == null || endswith(each.value.name, "r")
+      # read-only service accounts don't use hg-specific principal
+      each.value.cicd.repository_hg == null || endswith(each.value.name, "r")
       ? format(
         local.identity_providers[each.value.cicd.identity_provider].principal_repo,
         var.automation.federated_identity_pool,
         each.value.cicd.repository_name
       )
       : format(
-        local.identity_providers[each.value.cicd.identity_provider].principal_branch,
+        local.identity_providers[each.value.cicd.identity_provider].principal_hg,
         var.automation.federated_identity_pool,
         each.value.cicd.repository_name,
-        each.value.cicd.repository_branch
+        each.value.cicd.repository_hg
       )
     ]
   }

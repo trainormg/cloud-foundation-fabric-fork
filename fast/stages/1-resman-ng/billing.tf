@@ -28,8 +28,8 @@ locals {
 
 resource "google_billing_account_iam_member" "default" {
   for_each = local.billing_mode != "resource" ? {} : {
-    for k, v in local.branch_iam_billing : k => merge(v, {
-      member = try(module.branch-sa[v.member].iam_email, v.member)
+    for k, v in local.hg_iam_billing : k => merge(v, {
+      member = try(module.hg-sa[v.member].iam_email, v.member)
     })
   }
   billing_account_id = var.billing_account.id

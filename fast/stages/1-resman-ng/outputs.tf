@@ -15,23 +15,23 @@
  */
 
 locals {
-  # compute providers and tfvars file prefixes for each branch
-  _branch_file_prefixes = {
-    for k, v in local.branches :
+  # compute providers and tfvars file prefixes for each hierarchy group
+  _hg_file_prefixes = {
+    for k, v in local.hierarchy_groups :
     # name is [stage level]-[stage name]
     k => join("-", compact([v.fast_config.stage_level, k]))
     if v.fast_config.automation_enabled == true
   }
-  # compute stage 3 CI/CD dependencies on stage 2 branches
+  # compute stage 3 CI/CD dependencies on stage 2 hierarchy group
   _cicd_stage2 = [
-    for k, v in local._branch_file_prefixes : v if(
-      local.branches[k].fast_config.automation_enabled == true &&
-      local.branches[k].fast_config.stage_level == 2
+    for k, v in local._hg_file_prefixes : v if(
+      local.hierarchy_groups[k].fast_config.automation_enabled == true &&
+      local.hierarchy_groups[k].fast_config.stage_level == 2
     )
   ]
   # prepare CI/CD workflow attributes
   cicd_workflows = {
-    for k, v in local.branch_cicd_configs : k => templatefile(
+    for k, v in local.hg_cicd_configs : k => templatefile(
       "${path.module}/templates/workflow-${v.repository_type}.yaml", {
         audiences = try(
           local.identity_providers[v.identity_provider].audiences, null
@@ -41,17 +41,17 @@ locals {
         )
         outputs_bucket = var.automation.outputs_bucket
         service_accounts = {
-          apply = module.branch-sa["${k}/sa-rw"].email
-          plan  = module.branch-sa["${k}/sa-ro"].email
+          apply = module.hg-sa["${k}/sa-rw"].email
+          plan  = module.hg-sa["${k}/sa-ro"].email
         }
         stage_name = k
         tf_providers_files = {
-          apply = "${local._branch_file_prefixes[k]}-providers.tf"
-          apply = "${local._branch_file_prefixes[k]}-r-providers.tf"
+          apply = "${local._hg_file_prefixes[k]}-providers.tf"
+          apply = "${local._hg_file_prefixes[k]}-r-providers.tf"
         }
         tf_var_files = (
           v.fast_config.stage_level == null
-          # if the branch has no stage level it does not have dependencies
+          # if the hierarchy group has no stage level it does not have dependencies
           ? []
           : concat(
             # stage 2s and 3s all depend on tfvars from 0 and 1
@@ -66,27 +66,27 @@ locals {
         )
     })
   }
-  # prepare branch provider attributes
+  # prepare hierarchy group provider attributes
   providers = merge(
     # read-write providers
     {
-      for k, v in local._branch_file_prefixes : v => templatefile(
+      for k, v in local._hg_file_prefixes : v => templatefile(
         "${path.module}/templates/providers.tf.tpl", {
           backend_extra = null
-          bucket        = module.branch-gcs[k].name
+          bucket        = module.hg-gcs[k].name
           name          = k
-          sa            = module.branch-sa["${k}/sa-rw"].email
+          sa            = module.hg-sa["${k}/sa-rw"].email
         }
       )
     },
     # read-only providers
     {
-      for k, v in local._branch_file_prefixes : "${v}-r" => templatefile(
+      for k, v in local._hg_file_prefixes : "${v}-r" => templatefile(
         "${path.module}/templates/providers.tf.tpl", {
           backend_extra = null
-          bucket        = module.branch-gcs[k].name
+          bucket        = module.hg-gcs[k].name
           name          = k
-          sa            = module.branch-sa["${k}/sa-ro"].email
+          sa            = module.hg-sa["${k}/sa-ro"].email
         }
       )
     }
@@ -94,10 +94,10 @@ locals {
   # stage output vars
   tfvars = {
     folder_ids = {
-      for k, v in module.branch-folders : k => v.id
+      for k, v in module.hg-folders : k => v.id
     }
     service_accounts = {
-      for k, v in module.branch-sa : k => v.email
+      for k, v in module.hg-sa : k => v.email
     }
     tag_keys = (
       var.root_node == null

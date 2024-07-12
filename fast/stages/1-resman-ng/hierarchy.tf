@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-# tfdoc:file:description Main branch resources.
+# tfdoc:file:description Main hierarchy group resources.
 
-module "branch-folders" {
+module "hg-folders" {
   source              = "../../../modules/folder"
-  for_each            = local.branch_folders
+  for_each            = local.hg_folders
   parent              = local.root_node
   name                = each.value.name
   contacts            = each.value.config.contacts
@@ -30,7 +30,7 @@ module "branch-folders" {
   iam = {
     for k, v in each.value.config.iam : k => [
       for vv in v : try(
-        module.branch-sa["${each.value.branch}/${vv}"].iam_email,
+        module.hg-sa["${each.value.hg}/${vv}"].iam_email,
         vv
       )
     ]
@@ -38,7 +38,7 @@ module "branch-folders" {
   iam_bindings = {
     for k, v in each.value.config.iam_bindings : k => merge(v, {
       member = try(
-        module.branch-sa["${each.value.branch}/${v.member}"].iam_email,
+        module.hg-sa["${each.value.hg}/${v.member}"].iam_email,
         v.member
       )
     })
@@ -46,7 +46,7 @@ module "branch-folders" {
   iam_bindings_additive = {
     for k, v in each.value.config.iam_bindings : k => merge(v, {
       member = try(
-        module.branch-sa["${each.value.branch}/${v.member}"].iam_email,
+        module.hg-sa["${each.value.hg}/${v.member}"].iam_email,
         v.member
       )
     })
@@ -57,17 +57,17 @@ module "branch-folders" {
   tag_bindings      = each.value.config.tag_bindings
 }
 
-module "branch-sa" {
+module "hg-sa" {
   source                 = "../../../modules/iam-service-account"
-  for_each               = local.branch_service_accounts
+  for_each               = local.hg_service_accounts
   project_id             = var.automation.project_id
   name                   = "resman-${each.value.name}"
-  display_name           = "Terraform resman service account for ${each.value.branch}."
+  display_name           = "Terraform resman service account for ${each.value.hg}."
   prefix                 = var.prefix
   service_account_create = var.root_node == null
   iam = !each.value.cicd_enabled ? {} : {
     "roles/iam.serviceAccountTokenCreator" = [
-      module.branch-cicd-sa["${each.key}-cicd"].iam_email
+      module.hg-cicd-sa["${each.key}-cicd"].iam_email
     ]
   }
   iam_project_roles = {
@@ -78,9 +78,9 @@ module "branch-sa" {
   }
 }
 
-module "branch-gcs" {
+module "hg-gcs" {
   source        = "../../../modules/gcs"
-  for_each      = local.branch_buckets
+  for_each      = local.hg_buckets
   project_id    = var.automation.project_id
   name          = "prod-resman-${each.key}-0"
   prefix        = var.prefix
@@ -89,10 +89,10 @@ module "branch-gcs" {
   versioning    = true
   iam = {
     "roles/storage.objectAdmin" = [
-      module.branch-sa["${each.key}/sa-rw"].iam_email
+      module.hg-sa["${each.key}/sa-rw"].iam_email
     ]
     "roles/storage.objectViewer" = [
-      module.branch-sa["${each.key}/sa-ro"].iam_email
+      module.hg-sa["${each.key}/sa-ro"].iam_email
     ]
   }
 }

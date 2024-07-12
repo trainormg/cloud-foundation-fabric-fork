@@ -14,28 +14,28 @@
  * limitations under the License.
  */
 
-# tfdoc:file:description Branch factory locals.
+# tfdoc:file:description Hierarchy group factory locals.
 
 locals {
   # read and decode factory files
-  _branches_f_path = try(
-    pathexpand(var.factories_config.branches), null
+  _hierarchy_groups_f_path = try(
+    pathexpand(var.factories_config.hierarchy_groups), null
   )
-  _branches_f_files = try(
-    fileset(local._branches_f_path, "**/*.yaml"),
+  _hierarchy_groups_f_files = try(
+    fileset(local._hierarchy_groups_f_path, "**/*.yaml"),
     []
   )
-  _branches_f_raw = {
-    for f in local._branches_f_files :
+  _hierarchy_groups_f_raw = {
+    for f in local._hierarchy_groups_f_files :
     split(".", f)[0] => yamldecode(file(
-      "${coalesce(local._branches_f_path, "-")}/${f}"
+      "${coalesce(local._hierarchy_groups_f_path, "-")}/${f}"
     ))
   }
   # recompose with optional and default attributes
-  _branches_f = {
-    for k, v in local._branches_f_raw : k => merge(v, {
+  _hierarchy_groups_f = {
+    for k, v in local._hierarchy_groups_f_raw : k => merge(v, {
       # fail if this is not defined
-      branch_name   = v.branch_name
+      name          = v.name
       extra_folders = try(v.extra_folders, {})
       fast_config = {
         automation_enabled = try(v.fast_config.automation_enabled, true)
