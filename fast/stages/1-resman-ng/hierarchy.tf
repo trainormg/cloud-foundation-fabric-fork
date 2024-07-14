@@ -64,10 +64,17 @@ module "hg-folders" {
     ]
   }
   org_policies = each.value.config.org_policies
-  tag_bindings = {
-    for k, v in each.value.config.tag_bindings :
-    k => lookup(local.tag_values, v, v)
-  }
+  tag_bindings = merge(
+    # hierarchy group tag
+    {
+      fast-hierarchy-group = local.tag_values["fast-hg/${each.value.hg}"]
+    },
+    # dereference user-specified tag bindings
+    {
+      for k, v in each.value.config.tag_bindings :
+      k => lookup(local.tag_values, v, v)
+    }
+  )
 }
 
 module "hg-sa" {

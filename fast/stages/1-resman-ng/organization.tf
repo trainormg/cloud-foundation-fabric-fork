@@ -57,44 +57,60 @@ module "organization" {
   )
   # be careful assigning tag viewer or user roles here as this is authoritative
   tags = merge(local.tags, {
-    (var.tag_names.context) = {
-      description = "Resource management context."
-      iam         = try(local.tags.context.iam, {})
+    fast-hg = {
+      description = "FAST hierarchy group."
+      iam         = try(local.tags.fast-hg.iam, {})
       values = {
-        data = {
-          iam = try(local.tags.context.values.data.iam, {})
-        }
-        gke = {
-          iam = try(local.tags.context.values.gke.iam, {})
-        }
-        gcve = {
-          iam = try(local.tags.context.values.gcve.iam, {})
-        }
-        networking = {
-          iam = try(local.tags.context.values.networking.iam, {})
-        }
-        project-factory = {
-          iam = try(local.tags.context.values.project-factory.iam, {})
-        }
-        sandbox = {
-          iam = try(local.tags.context.values.sandbox.iam, {})
-        }
-        security = {
-          iam = try(local.tags.context.values.security.iam, {})
+        for k, v in local.hierarchy_groups : k => {
+          iam = try(local.tags["fast-hg"].values[k].iam, {})
         }
       }
     }
-    (var.tag_names.environment) = {
-      description = "Environment definition."
-      iam         = try(local.tags.environment.iam, {})
+    fast-environment = {
+      description = "FAST environment definition."
+      iam         = try(local.tags.fast-environment.iam, {})
       values = {
         development = {
-          iam = try(local.tags.environment.values.development.iam, {})
+          iam = try(local.tags.fast-environment.values.development.iam, {})
         }
         production = {
-          iam = try(local.tags.environment.values.production.iam, {})
+          iam = try(local.tags.fast-environment.values.production.iam, {})
         }
       }
     }
   })
+}
+
+# a second instance of the module is needed to prevent a cycle with tag values
+
+module "organization-orgpolicy-iam" {
+  source          = "../../../modules/organization"
+  count           = var.root_node == null ? 1 : 0
+  organization_id = "organizations/${var.organization.id}"
+  iam_bindings_additive = merge(
+    {
+      for k, v in local.hierarchy_groups :
+      "${k}/roles/orgpolicy.policyAdmin/sa-rw" => {
+        member = module.hg-sa["${k}/sa-rw"].iam_email
+        role   = "roles/orgpolicy.policyAdmin"
+        condition = {
+          title       = "${k}_orgpol_admin_sa_rw"
+          description = "Org policy admin for ${k} rw (conditional)."
+          expression  = "resource.matchTag('${var.organization.id}/fast-hg', '${k}')"
+        }
+      } if v.fast_config.orgpolicy_conditional_iam == true
+    },
+    {
+      for k, v in local.hierarchy_groups :
+      "${k}/roles/orgpolicy.policyViewer/sa-ro" => {
+        member = module.hg-sa["${k}/sa-ro"].iam_email
+        role   = "roles/orgpolicy.policyViewer"
+        condition = {
+          title       = "${k}_orgpol_admin_sa_ro"
+          description = "Org policy admin for ${k} ro (conditional)."
+          expression  = "resource.matchTag('${var.organization.id}/fast-hg', '${k}')"
+        }
+      } if v.fast_config.orgpolicy_conditional_iam == true
+    }
+  )
 }

@@ -20,19 +20,7 @@ fast_config:
       - sa-rw
     user_principals:
       - sa-rw
-  # if the project factory needs to be able to control org policies, uncomment
-  # the following block and replace 12345678 with the organization id in the
-  # condition expression below
-  #
-  # organization_iam:
-  #   sa_pf_org_admin_conditional:
-  #     member: sa-rw
-  #     role: roles/orgpolicy.policyAdmin
-  #     condition:
-  #       title: sa_pf_org_admin_conditional
-  #       description: Org policy admin for project factory (conditional).
-  #       expression: >
-  #         resource.matchTag('12345678/context/project-factory')
+  orgpolicy_conditional_iam: true
 folders_config:
   iam:
     roles/logging.admin:
@@ -53,5 +41,3 @@ folders_config:
   iam_by_principals:
     gcp-network-admins:
       - roles/editor
-  tag_bindings:
-    context: context/project-factory

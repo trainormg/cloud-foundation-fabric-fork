@@ -44,6 +44,7 @@ variable "hierarchy_groups" {
           description = optional(string)
         }))
       })), {})
+      orgpolicy_conditional_iam = optional(bool, false)
     }), {})
     folders_config = optional(object({
       contacts = optional(map(list(string)), {})

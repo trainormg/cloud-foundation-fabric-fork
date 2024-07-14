@@ -38,20 +38,6 @@ variable "outputs_location" {
   default     = null
 }
 
-variable "tag_names" {
-  description = "Customized names for resource management tags."
-  type = object({
-    context     = optional(string, "context")
-    environment = optional(string, "environment")
-  })
-  default  = {}
-  nullable = false
-  validation {
-    condition     = alltrue([for k, v in var.tag_names : v != null])
-    error_message = "Tag names cannot be null."
-  }
-}
-
 variable "tags" {
   description = "Custom secure tags by key name. The `iam` attribute behaves like the similarly named one at module level."
   type = map(object({

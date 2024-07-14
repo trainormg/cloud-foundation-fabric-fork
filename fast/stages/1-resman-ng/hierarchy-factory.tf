@@ -57,6 +57,9 @@ locals {
             condition = null
           }, v)
         }
+        orgpolicy_conditional_iam = try(
+          v.fast_config.orgpolicy_conditional_iam, false
+        )
       }
       folders_config = {
         contacts              = try(v.folders_config.contacts, {})

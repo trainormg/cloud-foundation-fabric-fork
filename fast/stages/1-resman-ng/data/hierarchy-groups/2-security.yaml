@@ -45,5 +45,3 @@ folders_config:
   iam_by_principals:
     gcp-security-admins:
       - roles/editor
-  tag_bindings:
-    context: context/security

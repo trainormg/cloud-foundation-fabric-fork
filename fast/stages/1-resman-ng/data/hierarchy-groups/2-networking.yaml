@@ -47,5 +47,3 @@ folders_config:
   iam_by_principals:
     gcp-network-admins:
       - roles/editor
-  tag_bindings:
-    context: context/networking

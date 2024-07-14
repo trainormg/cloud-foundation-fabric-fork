@@ -40,10 +40,10 @@ module "automation-project" {
   name           = var.automation.project_id
   project_create = false
   # do not assign tagViewer or tagUser roles here on tag keys and values as
-  # they are managed authoritatively and will break multitenant stages
+  # they are managed authoritatively and it will break multitenant stages
   tags = merge(local.tags, {
-    (var.tag_names.context) = {
-      description = "Resource management context."
+    fast-hg = {
+      description = "FAST hierarchy group definition."
       iam         = {}
       values = {
         data       = {}
@@ -54,8 +54,8 @@ module "automation-project" {
         security   = {}
       }
     }
-    (var.tag_names.environment) = {
-      description = "Environment definition."
+    fast-environment = {
+      description = "FAST environment definition."
       iam         = {}
       values = {
         development = {}
