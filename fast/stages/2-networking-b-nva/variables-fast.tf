@@ -56,12 +56,10 @@ variable "fast_features" {
 
 variable "folder_ids" {
   # tfdoc:variable:source 1-resman
-  description = "Folders to be used for the networking resources in folders/nnnnnnnnnnn format. If null, folder will be created."
-  type = object({
-    networking      = string
-    networking-dev  = string
-    networking-prod = string
-  })
+  description = "Folders referenced in this stage."
+  type        = map(string)
+  nullable    = false
+  default     = {}
 }
 
 variable "organization" {
@@ -87,14 +85,14 @@ variable "prefix" {
 variable "service_accounts" {
   # tfdoc:variable:source 1-resman
   description = "Automation service accounts in name => email format."
-  type = object({
-    data-platform-dev    = string
-    data-platform-prod   = string
-    gke-dev              = string
-    gke-prod             = string
-    project-factory      = string
-    project-factory-dev  = string
-    project-factory-prod = string
-  })
-  default = null
+  type        = map(string)
+  default     = null
+}
+
+variable "tag_values" {
+  # tfdoc:variable:source 1-resman
+  description = "FAST-managed resource manager tag values."
+  type        = map(string)
+  nullable    = false
+  default     = {}
 }

@@ -45,6 +45,19 @@ variable "create_test_instances" {
   default     = false
 }
 
+variable "delegated_service_accounts" {
+  description = "Service accounts with delegated role grants on network projects. Keys in the service_accounts variables or service account emails are supported."
+  type = object({
+    dev  = optional(list(string), [])
+    prod = optional(list(string), [])
+  })
+  nullable = false
+  default = {
+    dev  = ["dp-sa-rw", "gcve-sa-rw", "gke-sa-rw"]
+    prod = ["dp-sa-rw", "gcve-sa-rw", "gke-sa-rw"]
+  }
+}
+
 variable "dns" {
   description = "DNS configuration."
   type = object({
@@ -94,6 +107,13 @@ variable "factories_config" {
     condition     = var.factories_config.firewall_policy_name != null
     error_message = "Firewall policy name needs to be non-null."
   }
+}
+
+variable "folder_id" {
+  description = "Networking folder as a name referencing an attribute in the folder_ids variable, or folders/nnnnn id."
+  type        = string
+  nullable    = false
+  default     = "net-main"
 }
 
 variable "gcp_ranges" {

@@ -36,10 +36,8 @@ locals {
 
 module "folder" {
   source        = "../../../modules/folder"
-  parent        = "organizations/${var.organization.id}"
-  name          = "Networking"
-  folder_create = var.folder_ids.networking == null
-  id            = var.folder_ids.networking
+  folder_create = false
+  id            = lookup(var.folder_ids, var.folder_id, var.folder_id)
   contacts = (
     var.essential_contacts == null
     ? {}

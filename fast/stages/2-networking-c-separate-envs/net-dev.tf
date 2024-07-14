@@ -20,7 +20,7 @@ module "dev-spoke-project" {
   source          = "../../../modules/project"
   billing_account = var.billing_account.id
   name            = "dev-net-spoke-0"
-  parent          = var.folder_ids.networking-dev
+  parent          = module.folder.id
   prefix          = var.prefix
   services = concat([
     "container.googleapis.com",
@@ -54,16 +54,13 @@ module "dev-spoke-project" {
   iam_bindings = {
     sa_delegated_grants = {
       role = "roles/resourcemanager.projectIamAdmin"
-      members = compact([
-        try(local.service_accounts.data-platform-dev, null),
-        try(local.service_accounts.project-factory, null),
-        try(local.service_accounts.project-factory-dev, null),
-        try(local.service_accounts.project-factory-prod, null),
-        try(local.service_accounts.gke-dev, null),
+      members = toset([
+        for k in var.delegated_service_accounts.dev :
+        "serviceAccount:${lookup(var.service_accounts, k, k)}"
       ])
       condition = {
-        title       = "dev_stage3_sa_delegated_grants"
-        description = "Development host project delegated grants."
+        title       = "stage3_sa_delegated_grants"
+        description = "Stage 3 service accounts delegated grants."
         expression = format(
           "api.getAttribute('iam.googleapis.com/modifiedGrantsByRole', []).hasOnly([%s])",
           join(",", formatlist("'%s'", local.stage3_sas_delegated_grants))
@@ -71,6 +68,13 @@ module "dev-spoke-project" {
       }
     }
   }
+  tag_bindings = (
+    lookup(var.tag_values, "fast-environment/development", null) == null
+    ? {}
+    : {
+      environment = var.tag_values["fast-environment/development"]
+    }
+  )
 }
 
 module "dev-spoke-vpc" {
