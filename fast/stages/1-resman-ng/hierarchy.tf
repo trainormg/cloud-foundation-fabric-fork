@@ -32,6 +32,7 @@ module "hg-folders" {
     lookup(var.custom_roles, k, k) => [
       for vv in v : try(
         module.hg-sa["${each.value.hg}/${vv}"].iam_email,
+        module.hg-sa[vv].iam_email,
         lookup(var.groups, vv, vv)
       )
     ]
@@ -40,6 +41,7 @@ module "hg-folders" {
     for k, v in each.value.config.iam_bindings : k => {
       member = try(
         module.hg-sa["${each.value.hg}/${v.member}"].iam_email,
+        module.hg-sa[v.member].iam_email,
         lookup(var.groups, v.member, v.member)
       )
       role      = lookup(var.custom_roles, v.role, v.role)
@@ -50,6 +52,7 @@ module "hg-folders" {
     for k, v in each.value.config.iam_bindings : k => {
       member = try(
         module.hg-sa["${each.value.hg}/${v.member}"].iam_email,
+        module.hg-sa[v.member].iam_email,
         lookup(var.groups, v.member, v.member)
       )
       role      = lookup(var.custom_roles, v.role, v.role)

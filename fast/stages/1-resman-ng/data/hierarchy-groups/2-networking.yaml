@@ -39,6 +39,8 @@ folders_config:
       - sa-rw
     roles/compute.xpnAdmin:
       - sa-rw
+    service_project_network_admin:
+      - pf/sa-rw
     # read-only (plan) automation service account
     roles/viewer:
       - sa-ro
