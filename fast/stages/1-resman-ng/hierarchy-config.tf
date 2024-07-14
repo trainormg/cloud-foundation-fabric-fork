@@ -101,9 +101,10 @@ locals {
   # transform folder list into a map
   hg_folders = {
     for v in local._hg_folders : v.key => {
-      config = local.hierarchy_groups[v.hg].folders_config
       hg     = v.hg
       name   = v.name
+      config = local.hierarchy_groups[v.hg].folders_config
+      parent = local.hierarchy_groups[v.hg].parent
     }
   }
   # transform billing IAM list into a map

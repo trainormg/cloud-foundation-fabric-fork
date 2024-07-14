@@ -19,7 +19,7 @@
 module "hg-folders" {
   source              = "../../../modules/folder"
   for_each            = local.hg_folders
-  parent              = local.root_node
+  parent              = coalesce(each.value.parent, local.root_node)
   name                = each.value.name
   contacts            = each.value.config.contacts
   firewall_policy     = each.value.config.firewall_policy
@@ -28,7 +28,8 @@ module "hg-folders" {
   logging_settings    = each.value.config.logging_settings
   logging_sinks       = each.value.config.logging_sinks
   iam = {
-    for k, v in each.value.config.iam : k => [
+    for k, v in each.value.config.iam :
+    lookup(var.custom_roles, k, k) => [
       for vv in v : try(
         module.hg-sa["${each.value.hg}/${vv}"].iam_email,
         lookup(var.groups, vv, vv)
@@ -36,25 +37,31 @@ module "hg-folders" {
     ]
   }
   iam_bindings = {
-    for k, v in each.value.config.iam_bindings : k => merge(v, {
+    for k, v in each.value.config.iam_bindings : k => {
       member = try(
         module.hg-sa["${each.value.hg}/${v.member}"].iam_email,
         lookup(var.groups, v.member, v.member)
       )
-    })
+      role      = lookup(var.custom_roles, v.role, v.role)
+      condition = v.condition
+    }
   }
   iam_bindings_additive = {
-    for k, v in each.value.config.iam_bindings : k => merge(v, {
+    for k, v in each.value.config.iam_bindings : k => {
       member = try(
         module.hg-sa["${each.value.hg}/${v.member}"].iam_email,
         lookup(var.groups, v.member, v.member)
       )
-    })
+      role      = lookup(var.custom_roles, v.role, v.role)
+      condition = v.condition
+    }
   }
   # dynamic keys are not supported here so don't look for substitutions
   iam_by_principals = {
     for k, v in each.value.config.iam_by_principals :
-    lookup(var.groups, k, k) => v
+    lookup(var.groups, k, k) => [
+      for role in v : lookup(var.custom_roles, role, role)
+    ]
   }
   org_policies = each.value.config.org_policies
   tag_bindings = {

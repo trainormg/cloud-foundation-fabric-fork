@@ -1,4 +1,19 @@
-name: Networking
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+key: sec
+name: Security
 fast_config:
   billing_iam:
     cost_manager_principals:
@@ -6,12 +21,6 @@ fast_config:
     user_principals:
       - sa-rw
   organization_iam:
-    sa_net_fw_policy_admin:
-      member: sa-rw
-      role: roles/compute.orgFirewallPolicyAdmin
-    sa_net_xpn_admin:
-      member: sa-rw
-      role: roles/compute.xpnAdmin
     sa_sec_asset_viewer:
       member: sa-rw
       role: roles/cloudasset.viewer
@@ -28,15 +37,13 @@ folders_config:
       - sa-rw
     roles/resourcemanager.projectCreator:
       - sa-rw
-    roles/compute.xpnAdmin:
-      - sa-rw
     # read-only (plan) automation service account
     roles/viewer:
       - sa-ro
     roles/resourcemanager.folderViewer:
       - sa-ro
   iam_by_principals:
-    gcp-network-admins:
+    gcp-security-admins:
       - roles/editor
   tag_bindings:
-    context: context/networking
+    context: context/security

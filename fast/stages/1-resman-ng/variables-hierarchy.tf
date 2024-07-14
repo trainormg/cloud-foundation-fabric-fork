@@ -21,6 +21,7 @@ variable "hierarchy_groups" {
   type = map(object({
     name          = string
     extra_folders = optional(map(string), {})
+    parent        = optional(string)
     fast_config = optional(object({
       automation_enabled = optional(bool, true)
       stage_level        = optional(number, 2)

@@ -33,10 +33,13 @@ locals {
   }
   # recompose with optional and default attributes
   _hierarchy_groups_f = {
-    for k, v in local._hierarchy_groups_f_raw : k => merge(v, {
+    for k, v in local._hierarchy_groups_f_raw :
+    # allow overriding filename with explicit key
+    coalesce(try(v.key, null), k) => merge(v, {
       # fail if this is not defined
       name          = v.name
       extra_folders = try(v.extra_folders, {})
+      parent        = try(v.parent, null)
       fast_config = {
         automation_enabled = try(v.fast_config.automation_enabled, true)
         stage_level        = try(v.fast_config.stage_level, 2)

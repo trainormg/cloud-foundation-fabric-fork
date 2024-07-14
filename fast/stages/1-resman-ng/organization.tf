@@ -42,9 +42,11 @@ module "organization" {
   iam_bindings_additive = merge(
     # branch roles from each hg fast_config.iam_organization
     {
-      for k, v in local.hg_iam_org : k => merge(v, {
-        member = try(module.hg-sa[v.member].iam_email, v.member)
-      })
+      for k, v in local.hg_iam_org : k => {
+        member    = try(module.hg-sa[v.member].iam_email, v.member)
+        role      = lookup(var.custom_roles, v.role, v.role)
+        condition = v.condition
+      }
     },
     # branch billing roles from each hg fast_config.iam_billing
     local.billing_mode != "org" ? {} : {
