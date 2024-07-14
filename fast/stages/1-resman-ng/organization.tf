@@ -17,10 +17,12 @@
 # tfdoc:file:description Organization-level IAM and tags.
 
 locals {
+  # map of stage 2 hierarchy groups who get permissions on env tag values
   env_tag_hgs = [
     for k, v in local.hierarchy_groups :
     k if try(v.fast_config.stage_level, null) == 2
   ]
+  # combine user-defined IAM on tag values
   tags = {
     for tag_k, tag_v in var.tags : tag_k => merge(tag_v, {
       values = {
@@ -28,7 +30,6 @@ locals {
           iam = {
             for role, principals in tag_v.iam : role => [
               for principal in principals : (
-                # try replacing branch/sa-ro branch/sa-rw format principals
                 try(module.hg-sa[principal].iam_email, principal)
               )
             ]

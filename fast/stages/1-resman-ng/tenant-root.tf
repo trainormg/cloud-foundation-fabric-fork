@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-# tfdoc:file:description Tenant root node resources.
+# tfdoc:file:description Tenant-level stage 0 emulation.
 
 module "root-folder" {
   source        = "../../../modules/folder"
@@ -44,22 +44,48 @@ module "automation-project" {
   tags = merge(local.tags, {
     fast-hg = {
       description = "FAST hierarchy group definition."
-      iam         = {}
+      description = "FAST hierarchy group."
+      iam         = try(local.tags.fast-hg.iam, {})
       values = {
-        data       = {}
-        gke        = {}
-        gcve       = {}
-        networking = {}
-        sandbox    = {}
-        security   = {}
+        for k, v in local.hierarchy_groups : k => {
+          iam = try(local.tags["fast-hg"].values[k].iam, {})
+        }
       }
     }
     fast-environment = {
       description = "FAST environment definition."
-      iam         = {}
+      iam         = try(local.tags.fast-environment.iam, {})
       values = {
-        development = {}
-        production  = {}
+        development = {
+          iam = merge(
+            try(local.tags.fast-environment.values.development.iam, {}),
+            {
+              "roles/resourcemanager.tagUser" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-rw"].iam_email
+              ])
+              "roles/resourcemanager.tagViewer" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-ro"].iam_email
+              ])
+            }
+          )
+        }
+        production = {
+          iam = merge(
+            try(local.tags.fast-environment.values.production.iam, {}),
+            {
+              "roles/resourcemanager.tagUser" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-rw"].iam_email
+              ])
+              "roles/resourcemanager.tagViewer" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-ro"].iam_email
+              ])
+            }
+          )
+        }
       }
     }
   })
