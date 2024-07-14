@@ -17,6 +17,10 @@
 # tfdoc:file:description Organization-level IAM and tags.
 
 locals {
+  env_tag_hgs = [
+    for k, v in local.hierarchy_groups :
+    k if try(v.fast_config.stage_level, null) == 2
+  ]
   tags = {
     for tag_k, tag_v in var.tags : tag_k => merge(tag_v, {
       values = {
@@ -71,10 +75,34 @@ module "organization" {
       iam         = try(local.tags.fast-environment.iam, {})
       values = {
         development = {
-          iam = try(local.tags.fast-environment.values.development.iam, {})
+          iam = merge(
+            try(local.tags.fast-environment.values.development.iam, {}),
+            {
+              "roles/resourcemanager.tagUser" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-rw"].iam_email
+              ])
+              "roles/resourcemanager.tagViewer" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-ro"].iam_email
+              ])
+            }
+          )
         }
         production = {
-          iam = try(local.tags.fast-environment.values.production.iam, {})
+          iam = merge(
+            try(local.tags.fast-environment.values.production.iam, {}),
+            {
+              "roles/resourcemanager.tagUser" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-rw"].iam_email
+              ])
+              "roles/resourcemanager.tagViewer" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-ro"].iam_email
+              ])
+            }
+          )
         }
       }
     }

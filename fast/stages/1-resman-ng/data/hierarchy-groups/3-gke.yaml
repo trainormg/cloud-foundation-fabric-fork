@@ -12,24 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-key: net
-name: Networking
+key: gke
+name: GKE Shared Clusters
 fast_config:
   billing_iam:
     cost_manager_principals:
       - sa-rw
     user_principals:
       - sa-rw
-  organization_iam:
-    sa_net_fw_policy_admin:
-      member: sa-rw
-      role: roles/compute.orgFirewallPolicyAdmin
-    sa_net_xpn_admin:
-      member: sa-rw
-      role: roles/compute.xpnAdmin
 folders_config:
   iam:
-    # read-write service account
     roles/compute.xpnAdmin:
       - sa-rw
     roles/logging.admin:
@@ -40,16 +32,11 @@ folders_config:
       - sa-rw
     roles/resourcemanager.projectCreator:
       - sa-rw
-    roles/resourcemanager.tagUser:
-      - sa-rw
-    # read-only service account
+    # read-only (plan) automation service account
     roles/viewer:
       - sa-ro
     roles/resourcemanager.folderViewer:
       - sa-ro
-    # project factory read-write service account
-    service_project_network_admin:
-      - pf/sa-rw
   iam_by_principals:
-    gcp-network-admins:
+    gcp-security-admins:
       - roles/editor

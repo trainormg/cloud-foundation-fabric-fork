@@ -29,6 +29,11 @@ locals {
       local.hierarchy_groups[k].fast_config.stage_level == 2
     )
   ]
+  _tag_keys = (
+    var.root_node == null
+    ? module.organization[0].tag_keys
+    : module.automation-project[0].tag_keys
+  )
   # prepare CI/CD workflow attributes
   cicd_workflows = {
     for k, v in local.hg_cicd_configs : k => templatefile(
@@ -94,16 +99,12 @@ locals {
   # stage output vars
   tfvars = {
     folder_ids = {
-      for k, v in module.hg-folders : k => v.id
+      for k, v in module.hg-folders : replace(k, "/", "-") => v.id
     }
     service_accounts = {
-      for k, v in module.hg-sa : k => v.email
+      for k, v in module.hg-sa : replace(k, "/", "-") => v.email
     }
-    tag_keys = (
-      var.root_node == null
-      ? module.organization[0].tag_keys
-      : module.automation-project[0].tag_keys
-    )
+    tag_keys   = { for k, v in local._tag_keys : k => v.id }
     tag_values = local.tag_values
   }
 }

@@ -20,7 +20,7 @@ module "prod-spoke-project" {
   source          = "../../../modules/project"
   billing_account = var.billing_account.id
   name            = "prod-net-spoke-0"
-  parent          = var.folder_ids.networking-prod
+  parent          = module.folder.id
   prefix          = var.prefix
   services = concat(
     [
@@ -54,15 +54,13 @@ module "prod-spoke-project" {
   iam_bindings = {
     sa_delegated_grants = {
       role = "roles/resourcemanager.projectIamAdmin"
-      members = compact([
-        try(local.service_accounts.data-platform-prod, null),
-        try(local.service_accounts.project-factory, null),
-        try(local.service_accounts.project-factory-prod, null),
-        try(local.service_accounts.gke-prod, null),
+      members = toset([
+        for k in var.delegated_service_accounts.prod :
+        "serviceAccount:${lookup(var.service_accounts, k, k)}"
       ])
       condition = {
-        title       = "prod_stage3_sa_delegated_grants"
-        description = "Production host project delegated grants."
+        title       = "stage3_sa_delegated_grants"
+        description = "Stage 3 service accounts delegated grants."
         expression = format(
           "api.getAttribute('iam.googleapis.com/modifiedGrantsByRole', []).hasOnly([%s])",
           join(",", formatlist("'%s'", local.stage3_sas_delegated_grants))
@@ -70,6 +68,13 @@ module "prod-spoke-project" {
       }
     }
   }
+  tag_bindings = (
+    lookup(var.tag_values, "fast-environment/production", null) == null
+    ? {}
+    : {
+      environment = var.tag_values["fast-environment/production"]
+    }
+  )
 }
 
 module "prod-spoke-vpc" {
