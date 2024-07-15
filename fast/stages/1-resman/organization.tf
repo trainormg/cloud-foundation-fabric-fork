@@ -15,12 +15,13 @@
  */
 
 # tfdoc:file:description Organization-level IAM and tags.
-
+output "foo" { value = local.env_tag_hgs }
 locals {
   # map of stage 2 hierarchy groups who get permissions on env tag values
   env_tag_hgs = [
-    for k, v in local.hierarchy_groups :
-    k if try(v.fast_config.stage_level, null) == 2
+    for k, v in local.hierarchy_groups : k if(
+      v.fast_config.automation_enabled == true && v.fast_config.stage_level == 2
+    )
   ]
   # combine user-defined IAM on tag values
   tags = {

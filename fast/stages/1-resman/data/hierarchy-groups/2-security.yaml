@@ -15,6 +15,7 @@
 key: sec
 name: Security
 fast_config:
+  stage_level: 2
   billing_iam:
     cost_manager_principals:
       - sa-rw

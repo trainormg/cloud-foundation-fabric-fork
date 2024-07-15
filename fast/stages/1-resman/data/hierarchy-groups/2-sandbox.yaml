@@ -15,6 +15,7 @@
 key: sbx
 name: Sandbox
 fast_config:
+  stage_level: 2
   billing_iam:
     user_principals:
       - sa-rw

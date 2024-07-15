@@ -14,7 +14,12 @@
 
 key: pf
 name: Teams
+extra_folders:
+  - Data Platform
+  - GCVE
+  - GKE
 fast_config:
+  stage_level: 2
   billing_iam:
     cost_manager_principals:
       - sa-rw

@@ -24,7 +24,7 @@ variable "hierarchy_groups" {
     parent        = optional(string)
     fast_config = optional(object({
       automation_enabled = optional(bool, true)
-      stage_level        = optional(number, 2)
+      stage_level        = optional(number)
       billing_iam = optional(object({
         cost_manager_principals = optional(list(string), [])
         user_principals         = optional(list(string), [])
@@ -118,19 +118,27 @@ variable "hierarchy_groups" {
   validation {
     condition = alltrue([
       for k, v in var.hierarchy_groups : (
-        v.fast_config == null ||
-        contains([2, 3], coalesce(try(v.fast_config.stage_level, null), 2))
-      )
-    ])
-    error_message = "Incorrect stage level, FAST hierarchy groups can only be a stage 2 or 3."
-  }
-  validation {
-    condition = alltrue([
-      for k, v in var.hierarchy_groups : (
         v.fast_config.cicd_config == null ||
         v.fast_config.automation_enabled == true
       )
     ])
     error_message = "Hierarchy groups with CI/CD configured also need automation enabled."
+  }
+  validation {
+    condition = alltrue([
+      for k, v in var.hierarchy_groups : (
+        try(v.fast_config.automation.enabled, null) == true ||
+        (
+          v.fast_config.billing_iam.cost_manager_principals == []
+          &&
+          v.fast_config.billing_iam.user_principals == []
+          &&
+          length(v.fast_config.organization_iam) == 0
+          &&
+          v.fast_config.orgpolicy_conditional_iam != true
+        )
+      )
+    ])
+    error_message = "FAST config is unused when FAST automation is disabled."
   }
 }
