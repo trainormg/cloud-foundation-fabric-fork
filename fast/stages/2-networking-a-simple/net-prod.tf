@@ -44,26 +44,28 @@ module "prod-spoke-project" {
   }
   metric_scopes = [module.landing-project.project_id]
   iam = {
-    "roles/dns.admin" = compact([
-      try(local.service_accounts.gke-prod, null),
-      try(local.service_accounts.project-factory, null),
-      try(local.service_accounts.project-factory-prod, null),
+    for k, v in var.iam_config.iam.prod : k => compact([
+      strcontains(k, ":")
+      ? k
+      : lookup(local.service_accounts, k, "")
     ])
   }
   # allow specific service accounts to assign a set of roles
   iam_bindings = {
     sa_delegated_grants = {
       role = "roles/resourcemanager.projectIamAdmin"
-      members = toset([
-        for k in var.delegated_service_accounts.prod :
-        "serviceAccount:${lookup(var.service_accounts, k, k)}"
+      members = compact([
+        for k in var.iam_config.delegated_grants.principals_prod :
+        strcontains(k, ":")
+        ? k
+        : lookup(local.service_accounts, k, "")
       ])
       condition = {
         title       = "stage3_sa_delegated_grants"
         description = "Stage 3 service accounts delegated grants."
         expression = format(
           "api.getAttribute('iam.googleapis.com/modifiedGrantsByRole', []).hasOnly([%s])",
-          join(",", formatlist("'%s'", local.stage3_sas_delegated_grants))
+          join(",", formatlist("'%s'", var.iam_config.delegated_grants.roles))
         )
       }
     }

@@ -45,19 +45,6 @@ variable "create_test_instances" {
   default     = false
 }
 
-variable "delegated_service_accounts" {
-  description = "Service accounts with delegated role grants on network projects. Keys in the service_accounts variables or service account emails are supported."
-  type = object({
-    dev  = optional(list(string), [])
-    prod = optional(list(string), [])
-  })
-  nullable = false
-  default = {
-    dev  = ["dp-sa-rw", "gcve-sa-rw", "gke-sa-rw"]
-    prod = ["dp-sa-rw", "gcve-sa-rw", "gke-sa-rw"]
-  }
-}
-
 variable "dns" {
   description = "DNS configuration."
   type = object({
@@ -128,6 +115,44 @@ variable "gcp_ranges" {
     gcp_dmz_secondary     = "10.80.127.0/17"
     gcp_prod_primary      = "10.72.0.0/16"
     gcp_prod_secondary    = "10.88.0.0/16"
+  }
+}
+
+variable "iam_config" {
+  description = "IAM configuration for dev and prod projects."
+  type = object({
+    delegated_grants = optional(object({
+      principals_dev  = optional(list(string), [])
+      principals_prod = optional(list(string), [])
+      roles           = optional(list(string), [])
+    }), {})
+    iam = optional(object({
+      dev  = optional(map(list(string)), {})
+      prod = optional(map(list(string)), {})
+    }))
+  })
+  nullable = false
+  default = {
+    delegated_grants = {
+      principals_dev  = ["dp-sa-rw", "gcve-sa-rw", "gke-sa-rw"]
+      principals_prod = ["dp-sa-rw", "gcve-sa-rw", "gke-sa-rw"]
+      roles = [
+        "roles/composer.sharedVpcAgent",
+        "roles/compute.networkUser",
+        "roles/compute.networkViewer",
+        "roles/container.hostServiceAgentUser",
+        "roles/multiclusterservicediscovery.serviceAgent",
+        "roles/vpcaccess.user"
+      ]
+    }
+    iam = {
+      dev = {
+        "roles/dns.admin" = ["dp-sa-rw"]
+      }
+      prod = {
+        "roles/dns.admin" = ["dp-sa-rw"]
+      }
+    }
   }
 }
 

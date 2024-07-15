@@ -30,7 +30,7 @@ locals {
     "roles/vpcaccess.user",
   ]
   service_accounts = {
-    for k, v in coalesce(var.service_accounts, {}) : k => "serviceAccount:${v}" if v != null
+    for k, v in var.service_accounts : k => "serviceAccount:${v}"
   }
 }
 

@@ -19,18 +19,11 @@
 locals {
   custom_roles = coalesce(var.custom_roles, {})
   service_accounts = {
-    for k, v in coalesce(var.service_accounts, {}) :
-    k => "serviceAccount:${v}" if v != null
+    for k, v in var.service_accounts : k => "serviceAccount:${v}"
   }
-  spoke_connection = var.spoke_configs.peering_configs != null ? "peering" : "vpn"
-  stage3_sas_delegated_grants = [
-    "roles/composer.sharedVpcAgent",
-    "roles/compute.networkUser",
-    "roles/compute.networkViewer",
-    "roles/container.hostServiceAgentUser",
-    "roles/multiclusterservicediscovery.serviceAgent",
-    "roles/vpcaccess.user",
-  ]
+  spoke_connection = (
+    var.spoke_configs.peering_configs != null ? "peering" : "vpn"
+  )
   # combine all regions from variables and subnets
   regions = distinct(concat(
     values(var.regions),

@@ -28,17 +28,8 @@ locals {
     values(module.prod-spoke-vpc.subnet_regions),
   ))
   service_accounts = {
-    for k, v in coalesce(var.service_accounts, {}) :
-    k => "serviceAccount:${v}" if v != null
+    for k, v in var.service_accounts : k => "serviceAccount:${v}"
   }
-  stage3_sas_delegated_grants = [
-    "roles/composer.sharedVpcAgent",
-    "roles/compute.networkUser",
-    "roles/compute.networkViewer",
-    "roles/container.hostServiceAgentUser",
-    "roles/multiclusterservicediscovery.serviceAgent",
-    "roles/vpcaccess.user",
-  ]
 }
 
 module "folder" {
