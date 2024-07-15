@@ -58,8 +58,15 @@ case $STAGE_NAME in
   TFVARS="tfvars/0-bootstrap.auto.tfvars.json"
   ;;
 "1-vpc-sc")
-  PROVIDER="providers/1-vpcsc-providers.tf"
-  TFVARS="tfvars/0-bootstrap.auto.tfvars.json"
+  if [[ -z "$TENANT" ]]; then
+    echo "# if this is a tenant stage, set a \$TENANT variable with the tenant shortname and run the command again"
+    PROVIDER="providers/1-vpcsc-providers.tf"
+    TFVARS="tfvars/0-bootstrap.auto.tfvars.json"
+  else
+    unset GLOBALS
+    PROVIDER="tenants/$TENANT/providers/1-vpcsc-providers.tf"
+    TFVARS="tenants/$TENANT/tfvars/0-bootstrap.auto.tfvars.json"
+  fi
   ;;
 "2-networking"*)
   if [[ -z "$TENANT" ]]; then
@@ -71,6 +78,19 @@ case $STAGE_NAME in
     unset GLOBALS
     PROVIDER="tenants/$TENANT/providers/2-networking-providers.tf"
     TFVARS="tenants/$TENANT/tfvars/0-bootstrap-tenant.auto.tfvars.json
+    tenants/$TENANT/tfvars/1-resman.auto.tfvars.json"
+  fi
+  ;;
+"2-project-factory")
+  if [[ -z "$TENANT" ]]; then
+    echo "# if this is a tenant stage, set a \$TENANT variable with the tenant shortname and run the command again"
+    PROVIDER="providers/2-pf-providers.tf"
+    TFVARS="tfvars/0-bootstrap.auto.tfvars.json
+    tfvars/1-resman.auto.tfvars.json"
+  else
+    unset GLOBALS
+    PROVIDER="tenants/$TENANT/providers/2-pf-providers.tf"
+    TFVARS="tenants/$TENANT/tfvars/0-bootstrap.auto.tfvars.json
     tenants/$TENANT/tfvars/1-resman.auto.tfvars.json"
   fi
   ;;

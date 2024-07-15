@@ -13,8 +13,8 @@
 # limitations under the License.
 
 labels:
- team: team-0
-parent: folders/1234567890
+ team: team-a
+parent: team-a/dev
 services:
 - compute.googleapis.com
 - storage.googleapis.com
