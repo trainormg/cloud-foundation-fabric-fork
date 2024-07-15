@@ -96,14 +96,15 @@ variable "data_overrides" {
 variable "factories_config" {
   description = "Path to folder with YAML resource description data files."
   type = object({
-    hierarchy = optional(object({
-      folders_data_path = string
-      parent_ids        = optional(map(string), {})
-    }))
-    projects_data_path = optional(string)
+    hierarchy_data = optional(string)
+    project_data   = optional(string)
+    substitutions = optional(object({
+      folder_ids = optional(map(string), {})
+      tag_values = optional(map(string), {})
+    }), {})
     budgets = optional(object({
-      billing_account   = string
-      budgets_data_path = string
+      billing_account = string
+      data            = string
       # TODO: allow defining notification channels via YAML files
       notification_channels = optional(map(any), {})
     }))

@@ -27,7 +27,7 @@ locals {
       if !endswith(f, "/_config.yaml")
     }
   )
-  _project_path = try(pathexpand(var.factories_config.projects_data_path), null)
+  _project_path = try(pathexpand(var.factories_config.project_data), null)
   _projects = merge(
     {
       for f in try(fileset(local._project_path, "**/*.yaml"), []) :

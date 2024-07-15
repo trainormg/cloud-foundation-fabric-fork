@@ -22,13 +22,13 @@ module "hierarchy-folder-lvl-1" {
   parent = try(
     # allow the YAML data to set the parent for this level
     lookup(
-      var.factories_config.hierarchy.parent_ids,
+      var.factories_config.substitutions.folder_ids,
       each.value.parent,
       # use the value as is if it's not in the parents map
       each.value.parent
     ),
     # use the default value in the initial parents map
-    var.factories_config.hierarchy.parent_ids.default
+    var.factories_config.substitutions.folder_ids.default
     # fail if we don't have an explicit parent
   )
   name                  = each.value.name
@@ -37,7 +37,10 @@ module "hierarchy-folder-lvl-1" {
   iam_bindings_additive = lookup(each.value, "iam_bindings_additive", {})
   iam_by_principals     = lookup(each.value, "iam_by_principals", {})
   org_policies          = lookup(each.value, "org_policies", {})
-  tag_bindings          = lookup(each.value, "tag_bindings", {})
+  tag_bindings = {
+    for k, v in lookup(each.value, "tag_bindings", {}) :
+    k => lookup(var.factories_config.substitutions.tag_values, v, v)
+  }
 }
 
 module "hierarchy-folder-lvl-2" {
@@ -50,7 +53,10 @@ module "hierarchy-folder-lvl-2" {
   iam_bindings_additive = lookup(each.value, "iam_bindings_additive", {})
   iam_by_principals     = lookup(each.value, "iam_by_principals", {})
   org_policies          = lookup(each.value, "org_policies", {})
-  tag_bindings          = lookup(each.value, "tag_bindings", {})
+  tag_bindings = {
+    for k, v in lookup(each.value, "tag_bindings", {}) :
+    k => lookup(var.factories_config.substitutions.tag_values, v, v)
+  }
 }
 
 module "hierarchy-folder-lvl-3" {
@@ -63,5 +69,8 @@ module "hierarchy-folder-lvl-3" {
   iam_bindings_additive = lookup(each.value, "iam_bindings_additive", {})
   iam_by_principals     = lookup(each.value, "iam_by_principals", {})
   org_policies          = lookup(each.value, "org_policies", {})
-  tag_bindings          = lookup(each.value, "tag_bindings", {})
+  tag_bindings = {
+    for k, v in lookup(each.value, "tag_bindings", {}) :
+    k => lookup(var.factories_config.substitutions.tag_values, v, v)
+  }
 }

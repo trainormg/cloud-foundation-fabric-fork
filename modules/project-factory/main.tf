@@ -83,10 +83,10 @@ module "projects" {
   ))
   shared_vpc_host_config    = each.value.shared_vpc_host_config
   shared_vpc_service_config = each.value.shared_vpc_service_config
-  tag_bindings = merge(
-    each.value.tag_bindings,
-    var.data_merges.tag_bindings
-  )
+  tag_bindings = {
+    for k, v in merge(each.value.tag_bindings, var.data_merges.tag_bindings) :
+    k => lookup(var.factories_config.substitutions.tag_values, v, v)
+  }
   vpc_sc = each.value.vpc_sc
 }
 
