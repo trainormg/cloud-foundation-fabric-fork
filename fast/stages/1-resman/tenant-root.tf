@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
+# tfdoc:file:description Tenant-level stage 0 emulation.
+
 module "root-folder" {
   source        = "../../../modules/folder"
   count         = var.root_node != null ? 1 : 0
   id            = var.root_node
   folder_create = false
+  # TODO(ludo): reinstate IAM
   # additive bindings via delegated IAM grant set in stage 0
-  iam_bindings_additive = local.iam_bindings_additive
+  # iam_bindings_additive = local.iam_bindings_additive
   logging_sinks = {
     for name, attrs in local.log_sinks : name => {
       bq_partitioned_table = attrs.type == "bigquery"
@@ -37,26 +40,52 @@ module "automation-project" {
   name           = var.automation.project_id
   project_create = false
   # do not assign tagViewer or tagUser roles here on tag keys and values as
-  # they are managed authoritatively and will break multitenant stages
+  # they are managed authoritatively and it will break multitenant stages
   tags = merge(local.tags, {
-    (var.tag_names.context) = {
-      description = "Resource management context."
-      iam         = {}
+    fast-hg = {
+      description = "FAST hierarchy group definition."
+      description = "FAST hierarchy group."
+      iam         = try(local.tags.fast-hg.iam, {})
       values = {
-        data       = {}
-        gke        = {}
-        gcve       = {}
-        networking = {}
-        sandbox    = {}
-        security   = {}
+        for k, v in local.hierarchy_groups : k => {
+          iam = try(local.tags["fast-hg"].values[k].iam, {})
+        }
       }
     }
-    (var.tag_names.environment) = {
-      description = "Environment definition."
-      iam         = {}
+    fast-environment = {
+      description = "FAST environment definition."
+      iam         = try(local.tags.fast-environment.iam, {})
       values = {
-        development = {}
-        production  = {}
+        development = {
+          iam = merge(
+            try(local.tags.fast-environment.values.development.iam, {}),
+            {
+              "roles/resourcemanager.tagUser" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-rw"].iam_email
+              ])
+              "roles/resourcemanager.tagViewer" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-ro"].iam_email
+              ])
+            }
+          )
+        }
+        production = {
+          iam = merge(
+            try(local.tags.fast-environment.values.production.iam, {}),
+            {
+              "roles/resourcemanager.tagUser" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-rw"].iam_email
+              ])
+              "roles/resourcemanager.tagViewer" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-ro"].iam_email
+              ])
+            }
+          )
+        }
       }
     }
   })

@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-# tfdoc:file:description Organization policies.
+# tfdoc:file:description Organization-level IAM and tags.
 
 locals {
+  # map of stage 2 hierarchy groups who get permissions on env tag values
+  env_tag_hgs = [
+    for k, v in local.hierarchy_groups :
+    k if try(v.fast_config.stage_level, null) == 2
+  ]
+  # combine user-defined IAM on tag values
   tags = {
-    for k, v in var.tags : k => merge(v, {
+    for tag_k, tag_v in var.tags : tag_k => merge(tag_v, {
       values = {
-        for vk, vv in v.values : vk => merge(vv, {
+        for value_k, value_v in tag_v.values : value_k => merge(value_v, {
           iam = {
-            for rk, rv in vv.iam : rk => [
-              for rm in rv : (
-                contains(keys(local.service_accounts), rm)
-                ? "serviceAccount:${local.service_accounts[rm]}"
-                : rm
+            for role, principals in tag_v.iam : role => [
+              for principal in principals : (
+                try(module.hg-sa[principal].iam_email, principal)
               )
             ]
           }
@@ -40,58 +44,102 @@ module "organization" {
   source          = "../../../modules/organization"
   count           = var.root_node == null ? 1 : 0
   organization_id = "organizations/${var.organization.id}"
-  # additive bindings via delegated IAM grant set in stage 0
-  iam_bindings_additive = local.iam_bindings_additive
-  # do not assign tagViewer or tagUser roles here on tag keys and values as
-  # they are managed authoritatively and will break multitenant stages
+  iam_bindings_additive = merge(
+    # branch roles from each hg fast_config.iam_organization
+    {
+      for k, v in local.hg_iam_org : k => {
+        member    = try(module.hg-sa[v.member].iam_email, v.member)
+        role      = lookup(var.custom_roles, v.role, v.role)
+        condition = v.condition
+      }
+    },
+    # branch billing roles from each hg fast_config.iam_billing
+    local.billing_mode != "org" ? {} : {
+      for k, v in local.hg_iam_billing : k => merge(v, {
+        member = try(module.hg-sa[v.member].iam_email, v.member)
+      })
+    }
+  )
+  # be careful assigning tag viewer or user roles here as this is authoritative
   tags = merge(local.tags, {
-    (var.tag_names.context) = {
-      description = "Resource management context."
-      iam         = try(local.tags.context.iam, {})
+    fast-hg = {
+      description = "FAST hierarchy group."
+      iam         = try(local.tags.fast-hg.iam, {})
       values = {
-        data = {
-          iam         = try(local.tags.context.values.data.iam, {})
-          description = try(local.tags.context.values.data.description, null)
-        }
-        gke = {
-          iam         = try(local.tags.context.values.gke.iam, {})
-          description = try(local.tags.context.values.gke.description, null)
-        }
-        gcve = {
-          iam         = try(local.tags.context.values.gcve.iam, {})
-          description = try(local.tags.context.values.gcve.description, null)
-        }
-        networking = {
-          iam         = try(local.tags.context.values.networking.iam, {})
-          description = try(local.tags.context.values.networking.description, null)
-        }
-        project-factory = {
-          iam         = try(local.tags.context.values.project-factory.iam, {})
-          description = try(local.tags.context.values.project-factory.description, null)
-        }
-        sandbox = {
-          iam         = try(local.tags.context.values.sandbox.iam, {})
-          description = try(local.tags.context.values.sandbox.description, null)
-        }
-        security = {
-          iam         = try(local.tags.context.values.security.iam, {})
-          description = try(local.tags.context.values.security.description, null)
+        for k, v in local.hierarchy_groups : k => {
+          iam = try(local.tags["fast-hg"].values[k].iam, {})
         }
       }
     }
-    (var.tag_names.environment) = {
-      description = "Environment definition."
-      iam         = try(local.tags.environment.iam, {})
+    fast-environment = {
+      description = "FAST environment definition."
+      iam         = try(local.tags.fast-environment.iam, {})
       values = {
         development = {
-          iam         = try(local.tags.environment.values.development.iam, {})
-          description = try(local.tags.environment.values.development.description, null)
+          iam = merge(
+            try(local.tags.fast-environment.values.development.iam, {}),
+            {
+              "roles/resourcemanager.tagUser" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-rw"].iam_email
+              ])
+              "roles/resourcemanager.tagViewer" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-ro"].iam_email
+              ])
+            }
+          )
         }
         production = {
-          iam         = try(local.tags.environment.values.production.iam, {})
-          description = try(local.tags.environment.values.production.description, null)
+          iam = merge(
+            try(local.tags.fast-environment.values.production.iam, {}),
+            {
+              "roles/resourcemanager.tagUser" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-rw"].iam_email
+              ])
+              "roles/resourcemanager.tagViewer" = toset([
+                for k in local.env_tag_hgs :
+                module.hg-sa["${k}/sa-ro"].iam_email
+              ])
+            }
+          )
         }
       }
     }
   })
+}
+
+# a second instance of the module is needed to prevent a cycle with tag values
+
+module "organization-orgpolicy-iam" {
+  source          = "../../../modules/organization"
+  count           = var.root_node == null ? 1 : 0
+  organization_id = "organizations/${var.organization.id}"
+  iam_bindings_additive = merge(
+    {
+      for k, v in local.hierarchy_groups :
+      "${k}/roles/orgpolicy.policyAdmin/sa-rw" => {
+        member = module.hg-sa["${k}/sa-rw"].iam_email
+        role   = "roles/orgpolicy.policyAdmin"
+        condition = {
+          title       = "${k}_orgpol_admin_sa_rw"
+          description = "Org policy admin for ${k} rw (conditional)."
+          expression  = "resource.matchTag('${var.organization.id}/fast-hg', '${k}')"
+        }
+      } if v.fast_config.orgpolicy_conditional_iam == true
+    },
+    {
+      for k, v in local.hierarchy_groups :
+      "${k}/roles/orgpolicy.policyViewer/sa-ro" => {
+        member = module.hg-sa["${k}/sa-ro"].iam_email
+        role   = "roles/orgpolicy.policyViewer"
+        condition = {
+          title       = "${k}_orgpol_admin_sa_ro"
+          description = "Org policy admin for ${k} ro (conditional)."
+          expression  = "resource.matchTag('${var.organization.id}/fast-hg', '${k}')"
+        }
+      } if v.fast_config.orgpolicy_conditional_iam == true
+    }
+  )
 }

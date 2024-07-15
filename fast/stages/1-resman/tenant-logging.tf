@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-# tfdoc:file:description Audit log project and sink for tenant root folder.
+# tfdoc:file:description Tenant-level stage 0 emulation (logs project and destinations).
 
 locals {
   log_sink_destinations = merge(
