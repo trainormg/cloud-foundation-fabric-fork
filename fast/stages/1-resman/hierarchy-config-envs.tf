@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-# tfdoc:file:description Hierarchy groups environment folders and resources.
+# tfdoc:file:description Transformations for environment-based hierarchy groups.
 
 locals {
   # compute list of folders for groups with environments
@@ -107,71 +107,4 @@ locals {
       config = local.hierarchy_groups[v.hg].folders_config
     }
   }
-}
-
-# we need a separate module invocation to prevent circular references
-
-module "hg-folders-env" {
-  source              = "../../../modules/folder"
-  for_each            = local.hg_folders_env
-  parent              = module.hg-folders[each.value.parent].id
-  name                = each.value.name
-  contacts            = each.value.config.contacts
-  firewall_policy     = each.value.config.firewall_policy
-  logging_data_access = each.value.config.logging_data_access
-  logging_exclusions  = each.value.config.logging_exclusions
-  logging_settings    = each.value.config.logging_settings
-  logging_sinks       = each.value.config.logging_sinks
-  iam = {
-    for k, v in each.value.config.iam :
-    lookup(var.custom_roles, k, k) => [
-      for vv in v : try(
-        module.hg-sa["${each.value.hg}/${vv}"].iam_email,
-        module.hg-sa[vv].iam_email,
-        lookup(var.groups, vv, vv)
-      )
-    ]
-  }
-  iam_bindings = {
-    for k, v in each.value.config.iam_bindings : k => {
-      member = try(
-        module.hg-sa["${each.value.hg}/${v.member}"].iam_email,
-        module.hg-sa[v.member].iam_email,
-        lookup(var.groups, v.member, v.member)
-      )
-      role      = lookup(var.custom_roles, v.role, v.role)
-      condition = v.condition
-    }
-  }
-  iam_bindings_additive = {
-    for k, v in each.value.config.iam_bindings : k => {
-      member = try(
-        module.hg-sa["${each.value.hg}/${v.member}"].iam_email,
-        module.hg-sa[v.member].iam_email,
-        lookup(var.groups, v.member, v.member)
-      )
-      role      = lookup(var.custom_roles, v.role, v.role)
-      condition = v.condition
-    }
-  }
-  # dynamic keys are not supported here so don't look for substitutions
-  iam_by_principals = {
-    for k, v in each.value.config.iam_by_principals :
-    lookup(var.groups, k, k) => [
-      for role in v : lookup(var.custom_roles, role, role)
-    ]
-  }
-  org_policies = each.value.config.org_policies
-  # TODO: environment tag
-  tag_bindings = merge(
-    # hierarchy group tag
-    {
-      fast-hierarchy-group = local.tag_values["fast-hg/${each.value.hg}"]
-    },
-    # dereference user-specified tag bindings
-    {
-      for k, v in each.value.config.tag_bindings :
-      k => lookup(local.tag_values, v, v)
-    }
-  )
 }

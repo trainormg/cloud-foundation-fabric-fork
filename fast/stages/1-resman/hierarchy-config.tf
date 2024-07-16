@@ -16,13 +16,10 @@
 
 # tfdoc:file:description Hierarchy group locals that process the variable data.
 
-# This file only contains locals that process the hg variables, split
-# in two broad sections:
+# Locals in this file generally implement two transformation stages:
 #
-# - "local" locals (_ prefix) are only used here and compute aggregated lists
-#   of resources across all hgs
-# - "public" locals recompose the lists into maps that are then consumed
-#   directly with for_each in resource blocks
+# - _hg_xxx locals compute aggregated lists of resources across all hgroups
+# - hg_xxx locals recompose the lists into maps usable in for_each
 
 locals {
   # compute list of main and extra folders for all hierarchy groups
