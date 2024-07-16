@@ -71,10 +71,10 @@ module "prod-spoke-project" {
     }
   }
   tag_bindings = (
-    lookup(var.tag_values, "fast-environment/production", null) == null
+    lookup(var.tag_values, "fast-environment/prod", null) == null
     ? {}
     : {
-      environment = var.tag_values["fast-environment/production"]
+      environment = var.tag_values["fast-environment/prod"]
     }
   )
 }

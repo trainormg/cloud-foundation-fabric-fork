@@ -25,41 +25,51 @@
 #   directly with for_each in resource blocks
 
 locals {
-  # recompose list of main and extra folders for all hierarchy groups
+  # compute list of main and extra folders for all hierarchy groups
   _hg_folders = flatten([
-    for k, v in local.hierarchy_groups : concat([
-      {
-        hg   = k
-        key  = "${k}/main"
-        name = v.name
-      }
-      ], [
-      for key, name in v.extra_folders : {
-        hg   = k
-        key  = "${k}/${key}"
-        name = name
-      }
-    ])
+    for k, v in local.hierarchy_groups : concat(
+      [{
+        hg     = k
+        key    = k
+        name   = v.name
+        parent = v.parent
+      }],
+      [
+        for key, name in v.config.extra_folders : {
+          hg     = k
+          key    = "${k}/${key}"
+          name   = name
+          parent = v.parent
+        }
+      ]
+    )
   ])
-  # recompose list of billing IAM for all hierarchy groups
+  # compute list of billing IAM for all hierarchy groups
   _hg_iam_billing = flatten([
-    for k, v in local.hierarchy_groups : concat([
-      for member in v.fast_config.billing_iam.cost_manager_principals : {
-        hg     = k
-        key    = "${k}/cost_manager/${member}"
-        role   = "roles/billing.costsManager"
-        member = lookup(var.groups, member, member)
-      }
-      ], [
-      for member in v.fast_config.billing_iam.user_principals : {
-        hg     = k
-        key    = "${k}/user/${member}"
-        role   = "roles/billing.user"
-        member = lookup(var.groups, member, member)
-      }
-    ])
+    for k, v in local.hierarchy_groups : concat(
+      [
+        for member in v.fast_config.billing_iam.cost_manager_principals : {
+          hg     = k
+          key    = "${k}/cost_manager/${member}"
+          role   = "roles/billing.costsManager"
+          member = lookup(var.groups, member, member)
+        }
+        # exclude per-environment SAs or SAs when automation is not enabled
+        if((!v._has.envs && v._has.automation) || !startswith(member, "sa-r"))
+      ],
+      [
+        for member in v.fast_config.billing_iam.user_principals : {
+          hg     = k
+          key    = "${k}/user/${member}"
+          role   = "roles/billing.user"
+          member = lookup(var.groups, member, member)
+        }
+        # exclude per-environment SAs or SAs when automation is not enabled
+        if((!v._has.envs && v._has.automation) || !startswith(member, "sa-r"))
+      ]
+    )
   ])
-  # recompose list of org-level IAM for all hierarchy groups
+  # compute list of org-level IAM for all hierarchy groups
   _hg_iam_org = flatten([
     for k, v in local.hierarchy_groups : concat([
       for name, attrs in v.fast_config.organization_iam : {
@@ -69,9 +79,11 @@ locals {
         member    = lookup(var.groups, attrs.member, attrs.member)
         condition = attrs.condition
       }
+      # exclude per-environment SAs or SAs when automation is not enabled
+      if((!v._has.envs && v._has.automation) || !startswith(attrs.member, "sa-r"))
     ])
   ])
-  # recompose list of group service accounts as product of group and ro/rw
+  # compute list of group service accounts as product of group and ro/rw
   _hg_service_accounts = flatten([
     for k, v in local.hierarchy_groups : [
       {
@@ -86,49 +98,83 @@ locals {
         name         = "${k}-0"
         cicd_enabled = v.fast_config.cicd_config != null
       }
-    ] if v.fast_config.automation_enabled == true
+    ] if !v._has.envs && v._has.automation
   ])
-  # map of group buckets for hierarchy groups with automation enabled
+  # compute map of group buckets for hierarchy groups with automation enabled
   hg_buckets = {
     for k, v in local.hierarchy_groups : k => v.fast_config
-    if v.fast_config.automation_enabled == true
+    if !v._has.envs && v._has.automation
   }
-  # map of CI/CD configs for hierarchy groups with CI/CD enabled
+  # compute map of CI/CD configs for hierarchy groups with CI/CD enabled
   hg_cicd_configs = {
     for k, v in local.hierarchy_groups : k => v.fast_config.cicd_config
-    if v.fast_config.cicd_config != null
+    if !v._has.envs && v._has.automation && v._has.cicd
   }
   # transform folder list into a map
   hg_folders = {
     for v in local._hg_folders : v.key => {
       hg     = v.hg
       name   = v.name
+      parent = v.parent
       config = local.hierarchy_groups[v.hg].folders_config
-      parent = local.hierarchy_groups[v.hg].parent
     }
   }
   # transform billing IAM list into a map
   hg_iam_billing = {
-    for v in local._hg_iam_billing : v.key => {
+    for v in concat(local._hg_iam_billing, local._hg_iam_billing_env) :
+    v.key => {
       member = "${v.hg}/${v.member}"
       role   = v.role
     }
   }
   # transform org-level IAM list into a map
   hg_iam_org = {
-    for v in local._hg_iam_org : v.key => {
+    for v in concat(local._hg_iam_org, local._hg_iam_org_env) :
+    v.key => {
       member    = "${v.hg}/${v.member}"
       role      = v.role
       condition = v.condition
     }
   }
+  # compute list of org policy IAM bindings
+  hg_orgpolicy = flatten([
+    for k, v in local.hierarchy_groups : [
+      for key, value in { rw = "Admin", ro = "Viewer" } : [
+        {
+          hg     = k
+          key    = "${k}/roles/orgpolicy.policy${value}/sa-${key}"
+          member = "${k}/sa-${key}"
+          role   = "roles/orgpolicy.policy${value}"
+          title  = "${k}_orgpol_${lower(value)}_sa_${key}"
+          expression = (
+            "resource.matchTag('${var.organization.id}/fast-hg', '${k}')"
+          )
+        }
+      ]
+    ] if !v._has.envs && v.fast_config.orgpolicy_conditional_iam == true
+  ])
   # transform service account list into a map
   hg_service_accounts = {
-    for v in local._hg_service_accounts : v.key => v
+    for v in concat(local._hg_service_accounts, local._hg_service_accounts_env) :
+    v.key => v
   }
-  # merge hierarchy groups from the variable and factory files
-  hierarchy_groups = merge(
-    local._hierarchy_groups_f,
-    var.hierarchy_groups
-  )
+  # merge hierarchy groups from the variable and factory files and normalize
+  hierarchy_groups = {
+    for k, v in merge(local._hierarchy_groups_f, var.hierarchy_groups) :
+    k => merge(v, {
+      # discard undeclared environments
+      config = merge(v.config, {
+        environments = [
+          for key in v.config.environments :
+          key if lookup(var.environments, key, null) != null
+        ]
+      })
+      # convenience attrs to shorten comparisons used throughout most locals
+      _has = {
+        automation = v.fast_config.automation_enabled == true
+        cicd       = v.fast_config.cicd_config != null
+        envs       = length(v.config.environments) > 0
+      }
+    })
+  }
 }

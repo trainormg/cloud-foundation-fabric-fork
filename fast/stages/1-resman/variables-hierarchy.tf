@@ -19,9 +19,12 @@
 variable "hierarchy_groups" {
   description = "Hierarchy group definitions (merged with those from factory)."
   type = map(object({
-    name          = string
-    extra_folders = optional(map(string), {})
-    parent        = optional(string)
+    name   = string
+    parent = optional(string)
+    config = optional(object({
+      environments  = optional(list(string), [])
+      extra_folders = optional(map(string), {})
+    }), {})
     fast_config = optional(object({
       automation_enabled = optional(bool, true)
       stage_level        = optional(number)
@@ -117,6 +120,13 @@ variable "hierarchy_groups" {
   default  = {}
   validation {
     condition = alltrue([
+      for k, v in var.hierarchy_groups :
+      length(v.config.environments) == 0 || length(v.config.extra_folders) == 0
+    ])
+    error_message = "Environments and extra folders cannot be used in the same group."
+  }
+  validation {
+    condition = alltrue([
       for k, v in var.hierarchy_groups : (
         v.fast_config.cicd_config == null ||
         v.fast_config.automation_enabled == true
@@ -128,15 +138,7 @@ variable "hierarchy_groups" {
     condition = alltrue([
       for k, v in var.hierarchy_groups : (
         try(v.fast_config.automation.enabled, null) == true ||
-        (
-          v.fast_config.billing_iam.cost_manager_principals == []
-          &&
-          v.fast_config.billing_iam.user_principals == []
-          &&
-          length(v.fast_config.organization_iam) == 0
-          &&
-          v.fast_config.orgpolicy_conditional_iam != true
-        )
+        v.fast_config.orgpolicy_conditional_iam != true
       )
     ])
     error_message = "FAST config is unused when FAST automation is disabled."

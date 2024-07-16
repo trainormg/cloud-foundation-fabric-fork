@@ -37,9 +37,17 @@ locals {
     # allow overriding filename with explicit key
     coalesce(try(v.key, null), k) => merge(v, {
       # fail if this is not defined
-      name          = v.name
-      extra_folders = try(v.extra_folders, {})
-      parent        = try(v.parent, null)
+      name   = v.name
+      parent = try(v.parent, null)
+      config = {
+        environments = try(v.config.environments, [])
+        # in case of a clash, environments are preferred
+        extra_folders = (
+          length(try(v.config.environments, [])) > 0
+          ? {}
+          : try(v.config.extra_folders, {})
+        )
+      }
       fast_config = {
         automation_enabled = try(v.fast_config.automation_enabled, true)
         stage_level        = try(v.fast_config.stage_level, 2)

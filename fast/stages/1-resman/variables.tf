@@ -14,6 +14,16 @@
  * limitations under the License.
  */
 
+variable "environments" {
+  description = "Environment names."
+  type        = map(string)
+  nullable    = false
+  default = {
+    dev  = "Development"
+    prod = "Production"
+  }
+}
+
 variable "factories_config" {
   description = "Configuration for the resource factories or external data."
   type = object({

@@ -20,12 +20,12 @@ locals {
     for k, v in local.hierarchy_groups :
     # name is [stage level]-[stage name]
     k => join("-", compact([v.fast_config.stage_level, k]))
-    if v.fast_config.automation_enabled == true
+    if !v._has.envs && v._has.automation
   }
   # compute stage 3 CI/CD dependencies on stage 2 hierarchy group
   _cicd_stage2 = [
     for k, v in local._hg_file_prefixes : v if(
-      local.hierarchy_groups[k].fast_config.automation_enabled == true &&
+      local.hierarchy_groups[k]._has.automation &&
       local.hierarchy_groups[k].fast_config.stage_level == 2
     )
   ]
@@ -98,9 +98,14 @@ locals {
   )
   # stage output vars
   tfvars = {
-    folder_ids = {
-      for k, v in module.hg-folders : replace(k, "/", "-") => v.id
-    }
+    folder_ids = merge(
+      {
+        for k, v in module.hg-folders : replace(k, "/", "-") => v.id
+      },
+      {
+        for k, v in module.hg-folders-env : replace(k, "/", "-") => v.id
+      },
+    )
     service_accounts = {
       for k, v in module.hg-sa : replace(k, "/", "-") => v.email
     }

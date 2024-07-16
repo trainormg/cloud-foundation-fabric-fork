@@ -20,7 +20,9 @@ locals {
   # map of stage 2 hierarchy groups who get permissions on env tag values
   env_tag_hgs = [
     for k, v in local.hierarchy_groups : k if(
-      v.fast_config.automation_enabled == true && v.fast_config.stage_level == 2
+      v.fast_config.automation_enabled == true &&
+      length(v.config.environments) == 0 &&
+      v.fast_config.stage_level == 2
     )
   ]
   # combine user-defined IAM on tag values
@@ -76,24 +78,9 @@ module "organization" {
       description = "FAST environment definition."
       iam         = try(local.tags.fast-environment.iam, {})
       values = {
-        development = {
+        for k, v in var.environments : k => {
           iam = merge(
-            try(local.tags.fast-environment.values.development.iam, {}),
-            {
-              "roles/resourcemanager.tagUser" = toset([
-                for k in local.env_tag_hgs :
-                module.hg-sa["${k}/sa-rw"].iam_email
-              ])
-              "roles/resourcemanager.tagViewer" = toset([
-                for k in local.env_tag_hgs :
-                module.hg-sa["${k}/sa-ro"].iam_email
-              ])
-            }
-          )
-        }
-        production = {
-          iam = merge(
-            try(local.tags.fast-environment.values.production.iam, {}),
+            try(local.tags.fast-environment.values[k].iam, {}),
             {
               "roles/resourcemanager.tagUser" = toset([
                 for k in local.env_tag_hgs :
@@ -117,30 +104,16 @@ module "organization-orgpolicy-iam" {
   source          = "../../../modules/organization"
   count           = var.root_node == null ? 1 : 0
   organization_id = "organizations/${var.organization.id}"
-  iam_bindings_additive = merge(
-    {
-      for k, v in local.hierarchy_groups :
-      "${k}/roles/orgpolicy.policyAdmin/sa-rw" => {
-        member = module.hg-sa["${k}/sa-rw"].iam_email
-        role   = "roles/orgpolicy.policyAdmin"
-        condition = {
-          title       = "${k}_orgpol_admin_sa_rw"
-          description = "Org policy admin for ${k} rw (conditional)."
-          expression  = "resource.matchTag('${var.organization.id}/fast-hg', '${k}')"
-        }
-      } if v.fast_config.orgpolicy_conditional_iam == true
-    },
-    {
-      for k, v in local.hierarchy_groups :
-      "${k}/roles/orgpolicy.policyViewer/sa-ro" => {
-        member = module.hg-sa["${k}/sa-ro"].iam_email
-        role   = "roles/orgpolicy.policyViewer"
-        condition = {
-          title       = "${k}_orgpol_admin_sa_ro"
-          description = "Org policy admin for ${k} ro (conditional)."
-          expression  = "resource.matchTag('${var.organization.id}/fast-hg', '${k}')"
-        }
-      } if v.fast_config.orgpolicy_conditional_iam == true
+  # TODO: add support for environments
+  iam_bindings_additive = {
+    for v in local.hg_orgpolicy : v.key => {
+      member = module.hg-sa[v.member].iam_email
+      role   = v.role
+      condition = {
+        title       = v.title
+        description = "Org policy admin for ${v.member} (conditional)."
+        expression  = v.expression
+      }
     }
-  )
+  }
 }

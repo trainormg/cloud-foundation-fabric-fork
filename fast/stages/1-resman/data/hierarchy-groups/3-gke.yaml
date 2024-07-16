@@ -12,36 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-key: pf
-name: Teams
+key: gke
+name: GKE
 config:
-  extra_folders:
-    dp: Data Platform
+  environments:
+    - dev
+    - prod
 fast_config:
-  stage_level: 2
   billing_iam:
     cost_manager_principals:
       - sa-rw
+      - sa-ro
     user_principals:
       - sa-rw
-  orgpolicy_conditional_iam: true
-folders_config:
-  iam:
-    roles/logging.admin:
-      - sa-rw
-    roles/owner:
-      - sa-rw
-    roles/resourcemanager.folderAdmin:
-      - sa-rw
-    roles/resourcemanager.projectCreator:
-      - sa-rw
-    roles/compute.xpnAdmin:
-      - sa-rw
-    # read-only (plan) automation service account
-    roles/viewer:
-      - sa-ro
-    roles/resourcemanager.folderViewer:
-      - sa-ro
-  iam_by_principals:
-    gcp-network-admins:
-      - roles/editor
+  # this needs the role added to the delegated IAM grant in bootstrap
+  # organization_iam:
+  #   sa_gke_xpn_admin:
+  #     member: sa-rw
+  #     role: service_project_network_admin
+# folders_config:
+#   iam:
+#     roles/logging.admin:
+#       - sa-rw
+#     roles/owner:
+#       - sa-rw
+#     roles/resourcemanager.folderAdmin:
+#       - sa-rw
+#     roles/resourcemanager.projectCreator:
+#       - sa-rw
+#     # read-only (plan) automation service account
+#     roles/viewer:
+#       - sa-ro
+#     roles/resourcemanager.folderViewer:
+#       - sa-ro
