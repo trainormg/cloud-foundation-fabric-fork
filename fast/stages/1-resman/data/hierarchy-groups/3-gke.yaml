@@ -30,6 +30,7 @@ fast_config:
   #   sa_gke_xpn_admin:
   #     member: sa-rw
   #     role: service_project_network_admin
+  orgpolicy_conditional_iam: true
 # folders_config:
 #   iam:
 #     roles/logging.admin:

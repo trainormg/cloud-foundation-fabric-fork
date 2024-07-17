@@ -27,6 +27,7 @@ module "hg-folders" {
   logging_exclusions  = each.value.config.logging_exclusions
   logging_settings    = each.value.config.logging_settings
   logging_sinks       = each.value.config.logging_sinks
+  # try interpolating this hg SAs, other hg SAs, and groups
   iam = {
     for k, v in each.value.config.iam :
     lookup(var.custom_roles, k, k) => [

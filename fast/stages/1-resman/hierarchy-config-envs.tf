@@ -21,6 +21,7 @@ locals {
   _hg_folders_env = flatten([
     for k, v in local.hierarchy_groups : [
       for key in v.config.environments : {
+        env    = key
         hg     = k
         key    = "${k}-${key}"
         name   = var.environments[key]
@@ -101,10 +102,34 @@ locals {
   # transform folder list into a map
   hg_folders_env = {
     for v in local._hg_folders_env : v.key => {
+      env    = v.env
       hg     = v.hg
       name   = v.name
       parent = v.parent
       config = local.hierarchy_groups[v.hg].folders_config
     }
   }
+  # compute list of org policy IAM bindings
+  hg_orgpolicy_env = flatten([
+    for k, v in local.hierarchy_groups : [
+      for env in v.config.environments : [
+        for key, value in { rw = "Admin", ro = "Viewer" } : [
+          {
+            hg         = k
+            key        = "${k}-${env}/roles/orgpolicy.policy${value}/sa-${key}"
+            member     = "${k}-${env}/sa-${key}"
+            role       = "roles/orgpolicy.policy${value}"
+            title      = "${k}_${env}_orgpol_${lower(value)}_sa_${key}"
+            expression = <<-END
+              resource.matchTag('${var.organization.id}/fast-hg', '${k}')
+              &&
+              resource.matchTag('${var.organization.id}/fast-environment', '${env}')
+            END
+          }
+        ]
+      ]
+    ] if v._has.envs && v.fast_config.orgpolicy_conditional_iam == true
+  ])
 }
+
+output "tmp" { value = local.hg_orgpolicy_env }

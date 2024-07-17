@@ -104,9 +104,8 @@ module "organization-orgpolicy-iam" {
   source          = "../../../modules/organization"
   count           = var.root_node == null ? 1 : 0
   organization_id = "organizations/${var.organization.id}"
-  # TODO: add support for environments
   iam_bindings_additive = {
-    for v in local.hg_orgpolicy : v.key => {
+    for v in concat(local.hg_orgpolicy, local.hg_orgpolicy_env) : v.key => {
       member = module.hg-sa[v.member].iam_email
       role   = v.role
       condition = {

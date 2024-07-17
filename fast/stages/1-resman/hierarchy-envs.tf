@@ -69,11 +69,9 @@ module "hg-folders-env" {
     ]
   }
   org_policies = each.value.config.org_policies
-  # TODO: environment tag
   tag_bindings = merge(
-    # hierarchy group tag
     {
-      fast-hierarchy-group = local.tag_values["fast-hg/${each.value.hg}"]
+      fast-environment = local.tag_values["fast-environment/${each.value.env}"]
     },
     # dereference user-specified tag bindings
     {
