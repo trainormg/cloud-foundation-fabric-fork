@@ -46,18 +46,18 @@ module "hg-folders" {
         lookup(var.groups, v.member, v.member)
       )
       role      = lookup(var.custom_roles, v.role, v.role)
-      condition = v.condition
+      condition = try(v.condition, null)
     }
   }
   iam_bindings_additive = {
-    for k, v in each.value.config.iam_bindings : k => {
+    for k, v in each.value.config.iam_bindings_additive : k => {
       member = try(
         module.hg-sa["${each.value.hg}/${v.member}"].iam_email,
         module.hg-sa[v.member].iam_email,
         lookup(var.groups, v.member, v.member)
       )
       role      = lookup(var.custom_roles, v.role, v.role)
-      condition = v.condition
+      condition = try(v.condition, null)
     }
   }
   # dynamic keys are not supported here so don't look for substitutions

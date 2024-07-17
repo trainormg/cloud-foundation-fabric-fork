@@ -131,5 +131,3 @@ locals {
     ] if v._has.envs && v.fast_config.orgpolicy_conditional_iam == true
   ])
 }
-
-output "tmp" { value = local.hg_orgpolicy_env }

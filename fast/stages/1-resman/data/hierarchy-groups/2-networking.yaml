@@ -48,9 +48,10 @@ folders_config:
       - sa-ro
     roles/resourcemanager.folderViewer:
       - sa-ro
-    # project factory read-write service account
-    service_project_network_admin:
-      - pf/sa-rw
+  iam_bindings_additive:
+    pf_service_project_net_admin:
+      member: pf/sa-rw
+      role: service_project_network_admin
   iam_by_principals:
     gcp-network-admins:
       - roles/editor
