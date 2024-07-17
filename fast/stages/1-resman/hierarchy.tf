@@ -45,8 +45,18 @@ module "hg-folders" {
         module.hg-sa[v.member].iam_email,
         lookup(var.groups, v.member, v.member)
       )
-      role      = lookup(var.custom_roles, v.role, v.role)
-      condition = try(v.condition, null)
+      role = lookup(var.custom_roles, v.role, v.role)
+      condition = try(v.condition, null) == null ? null : merge(v.condition, {
+        expression = (
+          try(v.condition.match_tags, null) == null
+          ? try(v.condition.expression, null)
+          : join(" || ", [
+            # TODO: use automation project for multitenants
+            for t in v.condition.match_tags :
+            "resource.matchTag('${var.organization.id}/${t.key}', '${t.value}')"
+          ])
+        )
+      })
     }
   }
   iam_bindings_additive = {
@@ -56,8 +66,18 @@ module "hg-folders" {
         module.hg-sa[v.member].iam_email,
         lookup(var.groups, v.member, v.member)
       )
-      role      = lookup(var.custom_roles, v.role, v.role)
-      condition = try(v.condition, null)
+      role = lookup(var.custom_roles, v.role, v.role)
+      condition = try(v.condition, null) == null ? null : merge(v.condition, {
+        expression = (
+          try(v.condition.match_tags, null) == null
+          ? try(v.condition.expression, null)
+          : join(" || ", [
+            # TODO: use automation project for multitenants
+            for t in v.condition.match_tags :
+            "resource.matchTag('${var.organization.id}/${t.key}', '${t.value}')"
+          ])
+        )
+      })
     }
   }
   # dynamic keys are not supported here so don't look for substitutions

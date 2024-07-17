@@ -49,6 +49,24 @@ folders_config:
     roles/resourcemanager.folderViewer:
       - sa-ro
   iam_bindings_additive:
+    gke_dev_service_project_net_admin:
+      member: gke-dev/sa-rw
+      role: service_project_network_admin
+      condition:
+        title: gke_dev_svc_rw
+        description: Service Project Net Admin for gke-dev/sa-rw.
+        match_tags:
+          - key: fast-environment
+            value: dev
+    gke_prod_service_project_net_admin:
+      member: gke-prod/sa-rw
+      role: service_project_network_admin
+      condition:
+        title: gke_prod_svc_rw
+        description: Service Project Net Admin for gke-prod/sa-rw.
+        match_tags:
+          - key: fast-environment
+            value: prod
     pf_service_project_net_admin:
       member: pf/sa-rw
       role: service_project_network_admin

@@ -77,7 +77,11 @@ variable "hierarchy_groups" {
         members = list(string)
         role    = string
         condition = optional(object({
-          expression  = string
+          expression = optional(string)
+          match_tags = optional(list(object({
+            key   = string
+            value = string
+          })))
           title       = string
           description = optional(string)
         }))
@@ -86,7 +90,11 @@ variable "hierarchy_groups" {
         member = string
         role   = string
         condition = optional(object({
-          expression  = string
+          expression = optional(string)
+          match_tags = optional(list(object({
+            key   = string
+            value = string
+          })))
           title       = string
           description = optional(string)
         }))
@@ -143,4 +151,5 @@ variable "hierarchy_groups" {
     ])
     error_message = "FAST config is unused when FAST automation is disabled."
   }
+  # TODO: add validation for iam conditions
 }

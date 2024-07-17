@@ -25,7 +25,7 @@ fast_config:
       - sa-ro
     user_principals:
       - sa-rw
-  orgpolicy_conditional_iam: true
+#  orgpolicy_conditional_iam: true
 # folders_config:
 #   iam:
 #     roles/logging.admin:
