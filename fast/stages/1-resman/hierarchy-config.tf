@@ -143,9 +143,8 @@ locals {
           member = "${k}/sa-${key}"
           role   = "roles/orgpolicy.policy${value}"
           title  = "${k}_orgpol_${lower(value)}_sa_${key}"
-          # TODO: use automation project for multitenants
           expression = (
-            "resource.matchTag('${var.organization.id}/fast-hg', '${k}')"
+            "resource.matchTag('${local.tag_parent}/fast-hg', '${k}')"
           )
         }
       ]

@@ -34,6 +34,11 @@ locals {
     ? "organizations/${var.organization.id}"
     : var.root_node
   )
+  tag_parent = (
+    var.root_node == null
+    ? var.organization.id
+    : var.automation.project_number
+  )
   tag_values = {
     for k, v in local._tag_root.tag_values : k => v.id
   }

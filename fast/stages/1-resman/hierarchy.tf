@@ -51,9 +51,8 @@ module "hg-folders" {
           try(v.condition.match_tags, null) == null
           ? try(v.condition.expression, null)
           : join(" || ", [
-            # TODO: use automation project for multitenants
             for t in v.condition.match_tags :
-            "resource.matchTag('${var.organization.id}/${t.key}', '${t.value}')"
+            "resource.matchTag('${local.tag_parent}/${t.key}', '${t.value}')"
           ])
         )
       })
@@ -72,9 +71,8 @@ module "hg-folders" {
           try(v.condition.match_tags, null) == null
           ? try(v.condition.expression, null)
           : join(" || ", [
-            # TODO: use automation project for multitenants
             for t in v.condition.match_tags :
-            "resource.matchTag('${var.organization.id}/${t.key}', '${t.value}')"
+            "resource.matchTag('${local.tag_parent}/${t.key}', '${t.value}')"
           ])
         )
       })
