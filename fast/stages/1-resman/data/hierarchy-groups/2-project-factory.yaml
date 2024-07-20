@@ -16,7 +16,7 @@ key: pf
 name: Teams
 config:
   extra_folders:
-    dp: Business Units
+    bu: Business Units
 fast_config:
   stage_level: 2
   billing_iam:
