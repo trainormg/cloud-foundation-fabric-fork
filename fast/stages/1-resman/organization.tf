@@ -15,7 +15,7 @@
  */
 
 # tfdoc:file:description Organization-level IAM and tags.
-output "foo" { value = local.env_tag_hgs }
+
 locals {
   # map of stage 2 hierarchy groups who get permissions on env tag values
   env_tag_hgs = [
