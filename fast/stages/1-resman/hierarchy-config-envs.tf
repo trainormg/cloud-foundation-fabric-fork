@@ -74,15 +74,17 @@ locals {
     for k, v in local.hierarchy_groups : [
       for key in v.config.environments : [
         {
+          env          = key
           hg           = k
           key          = "${k}-${key}/sa-ro"
-          name         = "${k}-${key}-0r"
+          name         = "${k}-0r"
           cicd_enabled = v.fast_config.cicd_config != null
         },
         {
+          env          = key
           hg           = k
           key          = "${k}-${key}/sa-rw"
-          name         = "${k}-${key}-0"
+          name         = "${k}-0"
           cicd_enabled = v.fast_config.cicd_config != null
         }
       ]
@@ -93,6 +95,7 @@ locals {
     for k, v in local.hierarchy_groups : [
       for key in v.config.environments : [
         {
+          env = key
           hg  = k
           key = "${k}-${key}"
         }

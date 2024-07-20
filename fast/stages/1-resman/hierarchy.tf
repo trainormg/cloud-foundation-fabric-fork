@@ -103,7 +103,7 @@ module "hg-sa" {
   source                 = "../../../modules/iam-service-account"
   for_each               = local.hg_service_accounts
   project_id             = var.automation.project_id
-  name                   = "resman-${each.value.name}"
+  name                   = "${try(each.value.env, "prod")}-resman-${each.value.name}"
   display_name           = "Terraform resman service account for ${each.value.hg}."
   prefix                 = var.prefix
   service_account_create = var.root_node == null
@@ -124,7 +124,7 @@ module "hg-gcs" {
   source        = "../../../modules/gcs"
   for_each      = local.hg_buckets
   project_id    = var.automation.project_id
-  name          = "prod-resman-${each.key}-0"
+  name          = "${try(each.value.env, "prod")}-resman-${each.key}-0"
   prefix        = var.prefix
   location      = var.locations.gcs
   storage_class = local.gcs_storage_class
