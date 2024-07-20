@@ -100,7 +100,7 @@ variable "folder_id" {
   description = "Networking folder as a name referencing an attribute in the folder_ids variable, or folders/nnnnn id."
   type        = string
   nullable    = false
-  default     = "net-main"
+  default     = "net"
 }
 
 variable "gcp_ranges" {
