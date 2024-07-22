@@ -30,6 +30,7 @@ All notable changes to this project will be documented in this file.
 
 ### MODULES
 
+- [[#2436](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric/pull/2436)] Allow disabling topic creation in GCS module notification ([ludoo](https://github.com/ludoo)) <!-- 2024-07-22 10:51:26+00:00 -->
 - [[#2433](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric/pull/2433)] **incompatible change:** Reintroduce docker image path output in AR module ([ludoo](https://github.com/ludoo)) <!-- 2024-07-20 06:49:59+00:00 -->
 - [[#2424](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric/pull/2424)] E2E tests for ncc-spoke-ra ([wiktorn](https://github.com/wiktorn)) <!-- 2024-07-13 11:54:34+00:00 -->
 - [[#2427](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric/pull/2427)] Fix Cloud Function v1/v2 E2E tests ([wiktorn](https://github.com/wiktorn)) <!-- 2024-07-13 11:43:05+00:00 -->
