@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+# TODO(ludo): move to stage 0 / globals
+# TODO(ludo): change type to map(object) and add is_default boolean flag
 variable "environments" {
   description = "Environment names."
   type        = map(string)
