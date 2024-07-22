@@ -130,6 +130,7 @@ locals {
   tfvars_globals = {
     billing_account = var.billing_account
     groups          = local.principals
+    environments    = var.environments
     locations       = local.locations
     organization    = var.organization
     prefix          = var.prefix

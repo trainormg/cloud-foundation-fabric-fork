@@ -24,7 +24,7 @@ locals {
         env    = key
         hg     = k
         key    = "${k}-${key}"
-        name   = var.environments[key]
+        name   = var.environments[key].name
         parent = k
       } if lookup(var.environments, key, null) != null
     ]

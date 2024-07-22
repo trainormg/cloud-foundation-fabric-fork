@@ -56,24 +56,9 @@ module "automation-project" {
       description = "FAST environment definition."
       iam         = try(local.tags.fast-environment.iam, {})
       values = {
-        development = {
+        for k, v in var.environments : k => {
           iam = merge(
-            try(local.tags.fast-environment.values.development.iam, {}),
-            {
-              "roles/resourcemanager.tagUser" = toset([
-                for k in local.env_tag_hgs :
-                module.hg-sa["${k}/sa-rw"].iam_email
-              ])
-              "roles/resourcemanager.tagViewer" = toset([
-                for k in local.env_tag_hgs :
-                module.hg-sa["${k}/sa-ro"].iam_email
-              ])
-            }
-          )
-        }
-        production = {
-          iam = merge(
-            try(local.tags.fast-environment.values.production.iam, {}),
+            try(local.tags.fast-environment.values[k].iam, {}),
             {
               "roles/resourcemanager.tagUser" = toset([
                 for k in local.env_tag_hgs :

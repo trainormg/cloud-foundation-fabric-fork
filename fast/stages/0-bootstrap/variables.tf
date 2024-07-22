@@ -91,6 +91,30 @@ variable "custom_roles" {
   default     = {}
 }
 
+variable "environments" {
+  description = "Environment names."
+  type = map(object({
+    name       = string
+    is_default = optional(bool, false)
+  }))
+  nullable = false
+  default = {
+    dev = {
+      name = "Development"
+    }
+    prod = {
+      name       = "Production"
+      is_default = true
+    }
+  }
+  validation {
+    condition = anytrue([
+      for k, v in var.environments : v.is_default == true
+    ])
+    error_message = "At least one environment should be marked as default."
+  }
+}
+
 variable "essential_contacts" {
   description = "Email used for essential contacts, unset if null."
   type        = string

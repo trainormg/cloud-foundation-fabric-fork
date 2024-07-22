@@ -20,6 +20,7 @@ locals {
     ? module.organization[0]
     : module.automation-project[0]
   )
+  env_default = [for k, v in var.environments : k if v.is_default][0]
   gcs_storage_class = (
     length(split("-", var.locations.gcs)) < 2
     ? "MULTI_REGIONAL"
