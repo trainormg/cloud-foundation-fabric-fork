@@ -15,7 +15,7 @@
  */
 
 locals {
-  vpc_sc_ingress_policies = var.logging == null ? {} : {
+  fast_ingress_policies = var.logging == null ? {} : {
     fast-org-log-sinks = {
       from = {
         access_levels = ["*"]
@@ -27,6 +27,7 @@ locals {
       }
     }
   }
+<<<<<<<< HEAD:fast/stages/1-vpc-sc/main.tf
   vpc_sc_perimeter = (
     var.perimeters.default == null
     ? null
@@ -41,12 +42,25 @@ locals {
       resources = distinct(concat(
         var.perimeters.default.resources,
         var.resource_discovery.enabled != true ? [] : [
+========
+  perimeters = {
+    for k, v in var.perimeters : k => merge(v, {
+      restricted_services = (
+        v.restricted_services == null
+        ? local.restricted_services
+        : v.restricted_services
+      )
+      resources = distinct(concat(
+        v.resources,
+        k != "default" || var.resource_discovery.enabled != true ? [] : [
+>>>>>>>> origin/master:fast/stages/1-vpcsc/main.tf
           for v in module.vpc-sc-discovery[0].project_numbers :
           "projects/${v}"
         ]
       ))
     })
-  )
+  }
+  restricted_services = yamldecode(file("data/restricted-services.yaml"))
 }
 
 module "vpc-sc-discovery" {
@@ -57,9 +71,6 @@ module "vpc-sc-discovery" {
   ignore_projects  = var.resource_discovery.ignore_projects
   include_projects = var.resource_discovery.include_projects
 }
-
-# TODO(ludomagno): allow passing in restricted services via variable and factory file
-# TODO(ludomagno): implement vpc accessible services via variable or factory file
 
 module "vpc-sc" {
   source = "../../../modules/vpc-sc"
@@ -74,6 +85,7 @@ module "vpc-sc" {
   egress_policies  = var.egress_policies
   factories_config = var.factories_config
   ingress_policies = merge(
+<<<<<<<< HEAD:fast/stages/1-vpc-sc/main.tf
     var.ingress_policies,
     local.vpc_sc_ingress_policies
   )
@@ -86,6 +98,16 @@ module "vpc-sc" {
         !var.perimeters.default.dry_run ? local.vpc_sc_perimeter : null
       )
       use_explicit_dry_run_spec = var.perimeters.default.dry_run
+========
+    local.fast_ingress_policies,
+    var.ingress_policies
+  )
+  service_perimeters_regular = {
+    for k, v in local.perimeters : k => {
+      spec                      = v.dry_run ? v : null
+      status                    = !v.dry_run ? v : null
+      use_explicit_dry_run_spec = v.dry_run
+>>>>>>>> origin/master:fast/stages/1-vpcsc/main.tf
     }
   }
 }
