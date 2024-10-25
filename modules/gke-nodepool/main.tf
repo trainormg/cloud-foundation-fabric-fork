@@ -270,6 +270,6 @@ resource "google_container_node_pool" "nodepool" {
   }
   # TODO: remove this once provider stops producing an error-triggering permadiff
   lifecycle {
-    ignore_changes = ["node_config.kubelet_config"]
+    ignore_changes = [node_config.kubelet_config]
   }
 }
