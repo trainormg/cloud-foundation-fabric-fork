@@ -215,9 +215,9 @@ variable "trigger_config" {
 variable "vpc_connector" {
   description = "VPC connector configuration. Set create to 'true' if a new connector needs to be created."
   type = object({
-    create          = bool
-    name            = string
-    egress_settings = string
+    create          = optional(bool, false)
+    name            = optional(string)
+    egress_settings = optional(string)
   })
   default = null
 }
