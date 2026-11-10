@@ -119,12 +119,21 @@ variable "instance" {
     display_name                 = optional(string)
     edition                      = optional(string)
     default_backup_schedule_type = optional(string)
+    instance_type                = optional(string)
     labels                       = optional(map(string), {})
     name                         = string
     num_nodes                    = optional(number)
     processing_units             = optional(number)
     force_destroy                = optional(bool)
   })
+  validation {
+    condition = (
+      var.instance.instance_type == null ? true : contains(
+        ["PROVISIONED", "FREE_INSTANCE"], var.instance.instance_type
+      )
+    )
+    error_message = "Invalid instance_type. If set, possible values are: PROVISIONED, FREE_INSTANCE"
+  }
 }
 
 variable "instance_create" {
